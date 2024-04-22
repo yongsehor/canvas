@@ -37,11 +37,6 @@ export default {
           x:200,
           y:200,
           r:50
-        },
-        {
-          x:100,
-          y:100,
-          r:30
         }
       ],
       canvasWidth:0,
@@ -84,11 +79,22 @@ export default {
       this.canvas.addEventListener('touchend', e=>this.touchEndEvent(e))
     },
     // 绘制大圆
-    drawCircle(cx, cy, r){
+    drawCircle(cx, cy, r) {
+
+
       this.ctx.save()
       this.ctx.beginPath()
 
-      this.ctx.strokeStyle = "green"
+      // 渐变色圆圈
+      var grd = this.ctx.createLinearGradient(0, 0, 170, 0);
+      grd.addColorStop("0", "black");
+      grd.addColorStop("0.3", "magenta");
+      grd.addColorStop("0.5", "blue");
+      grd.addColorStop("0.6", "green");
+      grd.addColorStop("0.8", "yellow");
+      grd.addColorStop(1, "red");
+
+      this.ctx.strokeStyle = grd;
       this.ctx.linWidth = this.isHover ? 7 : 5
       this.ctx.arc(cx, cy, r, 0, Math.PI * 2)
       this.ctx.stroke()
@@ -100,7 +106,6 @@ export default {
     drawDot(cx,cy,r) {
       this.ctx.beginPath();
       this.ctx.arc(cx, cy, r, 0, 2 * Math.PI);
-      this.ctx.fillStyle = 'red';
       this.ctx.fill();
     },
     // 监听小圆点的触摸事件
@@ -185,29 +190,48 @@ export default {
         this.canvasInfo.offsetEvtPos = this.getCanvasPostion(e)
         this.dotInfo.offsetEvtPos = this.getCanvasPostion(e)
       }
-      // if (this.dotInfo.status === this.statusConfig.DRAG_START && this.getDistance(this.getCanvasPostion(e),this.dotInfo.lastEvtPos) > 5) {
-      //   this.dragging = true
-      //   this.dotInfo.status = this.statusConfig.DRAGGING
-      //   this.dotInfo.offsetEvtPos = this.getCanvasPostion(e)
-      // } else if (this.dotInfo.status === this.statusConfig.DRAGGING) {
-      //   console.log('wheeling');
-      //   const {dragTarget} = this.dotInfo
-      //   dragTarget.x += this.getCanvasPostion(e).x - this.dotInfo.offsetEvtPos.x
-      //   dragTarget.y += this.getCanvasPostion(e).y - this.dotInfo.offsetEvtPos.y
-      //   // this.ctx.clearRect(0,0,this.canvas.width,this.canvas.height)
-      //   // this.circles.forEach(c=>this.drawCircle(c.x,c.y,c.r))
-      //   // this.dotCirles.forEach(c=>this.drawDot(c.x,c.y,c.r))
-      //   // this.dotInfo.offsetEvtPos = this.getCanvasPostion(e)
-      //   if(this.dragging){
-      //     const angle = this.getAngle(this.getCanvasPostion(e),this.circles[0],this.dotCirles[0])
-      //     console.log(angle,'angle');
-      //     // if(angle){
-      //     //   this.ctx.rotate(angle);
-      //     // }
-      //     // draw();
-      //   }
+      if (this.dotInfo.status === this.statusConfig.DRAG_START && this.getDistance(this.getCanvasPostion(e),this.dotInfo.lastEvtPos) > 5) {
+        this.dragging = true
+        this.dotInfo.status = this.statusConfig.DRAGGING
+        this.dotInfo.offsetEvtPos = this.getCanvasPostion(e)
+      } else if (this.dotInfo.status === this.statusConfig.DRAGGING) {
+        console.log('wheeling');
+        
+        // this.ctx.clearRect(0,0,this.canvas.width,this.canvas.height)
+        // this.circles.forEach(c=>this.drawCircle(c.x,c.y,c.r))
+        // this.dotCirles.forEach(c=>this.drawDot(c.x,c.y,c.r))
+        // this.dotInfo.offsetEvtPos = this.getCanvasPostion(e)
+        if(this.dragging){
+          const angle = this.getAngle(this.getCanvasPostion(e),this.circles[0],this.dotCirles[0])
+          console.log(angle, 'angle');
+          const { dragTargets } = this.dotInfo
+          const obj = this.getDotMovePosition(this.getCanvasPostion(e), this.circles[0], angle)
+          console.log(obj,'obj');
+          dragTargets.x += this.getCanvasPostion(e).x - this.dotInfo.offsetEvtPos.x
+          dragTargets.y += this.getCanvasPostion(e).y - this.dotInfo.offsetEvtPos.y
+          this.ctx.clearRect(0,0,this.canvas.width,this.canvas.height)
+          this.circles.forEach(c=>this.drawCircle(c.x,c.y,c.r))
+          this.dotCirles.forEach(c=>this.drawDot(c.x,c.y,c.r))
+          this.dotInfo.offsetEvtPos = this.getCanvasPostion(e)
+          // if(angle){
+          //   this.ctx.rotate(angle);
+          // }
+          // draw();rotaterotate
+        }
 
-      // }
+      }
+    },
+    /**
+     * 获取拖动后线段相交圆的交点坐标-即小圆点的坐标
+     * @param {*} p1 拖动点坐标
+     * @param {*} p2 圆心坐标
+     * @param {*} angle 旋转角度
+     */
+    getDotMovePosition(p1,p2,angle) {
+      return {
+        x:Math.cos(angle)*(p1.x-p2.x) - Math.sin(angle)*(p1.y-p2.y) + p2.x,
+        y:Math.cos(angle)*(p1.y-p2.y) + Math.sin(angle)*(p1.x-p2.x) + p2.y
+      }
     },
     // 触摸抬起
     touchEndEvent(e){
