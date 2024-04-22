@@ -1,9 +1,9 @@
 <template>
   <div id="index">
     <!-- 头部组件 -->
-    <van-nav-bar fixed placeholder :border="false" class="navbar">
+    <!-- <van-nav-bar fixed placeholder :border="false" class="navbar">
       <template #title> 绘制 </template>
-    </van-nav-bar>
+    </van-nav-bar> -->
     <canvasPge/>
   </div>
 </template>
