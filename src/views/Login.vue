@@ -1,8 +1,8 @@
 <template>
   <div id="login">
     <div class="logo">
-      <p>Yukari</p>
-      <p>Music</p>
+      <p>yy</p>
+      <p>yy</p>
     </div>
     <div class="button">
       <van-button type="default" block round @click="showLoginPopup">

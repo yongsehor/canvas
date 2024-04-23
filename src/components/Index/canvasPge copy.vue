@@ -28,7 +28,7 @@ export default {
       },
       dotInfo: {
         status: 0,
-        dragTarget: null,
+        dragTargets: null,
         lastEvtPos: { x: null, y: null },
         offsetEvtPos: { x: null, y: null }//偏移量：拖动时防止回到圆心
       },
@@ -37,18 +37,17 @@ export default {
           x:200,
           y:200,
           r:50
-        }
+        },
+        // {
+        //   x:100,
+        //   y:150,
+        //   r:30
+        // }
       ],
       canvasWidth:0,
       canvasHeight:0,
       dotRadius:5,//小圆点半径
-      dotCirles:[
-        {
-          x:250,
-          y:200,
-          r:5
-        }
-      ],
+      dotCirles:[],
       dragging:false
     };
   },
@@ -69,8 +68,13 @@ export default {
     drawCircles() {
       this.canvasInfo.status = this.statusConfig.IDLE
       this.dotInfo.status = this.statusConfig.IDLE
-      this.circles.forEach((a,i) => {
+      this.circles.forEach(a => {
         this.drawCircle(a.x, a.y, a.r)
+        this.dotCirles.push({
+          x:a.x+a.r,
+          y:a.y,
+          r:this.dotRadius
+        })
       });
       this.dotCirles.forEach(a => {
         this.drawDot(a.x, a.y, a.r)
@@ -81,8 +85,11 @@ export default {
     },
     // 绘制大圆
     drawCircle(cx, cy, r) {
+
+
       this.ctx.save()
       this.ctx.beginPath()
+
       // 渐变色圆圈
       var grd = this.ctx.createLinearGradient(0, 0, 170, 0);
       grd.addColorStop("0", "black");
@@ -146,21 +153,17 @@ export default {
       const dotRef = this.ifInDotCircle(this.getCanvasPostion(e))
       if (circleRef) {
         this.canvasInfo.dragTarget = circleRef
-        this.dotInfo.dragTarget = circleRef
+        this.dotInfo.dragTargets = circleRef
         this.canvasInfo.status = this.statusConfig.DRAG_START
         this.canvasInfo.lastEvtPos = this.getCanvasPostion(e)
         this.canvasInfo.offsetEvtPos = this.getCanvasPostion(e)
-        this.dotInfo.lastEvtPos = this.getCanvasPostion(e)
-        this.dotInfo.offsetEvtPos = this.getCanvasPostion(e)
       }
       if (dotRef) {
         this.canvasInfo.dragTarget = dotRef
-        this.dotInfo.dragTarget = dotRef
+        this.dotInfo.dragTargets = dotRef
         this.dotInfo.status = this.statusConfig.DRAG_START
         this.dotInfo.lastEvtPos = this.getCanvasPostion(e)
         this.dotInfo.offsetEvtPos = this.getCanvasPostion(e)
-        this.canvasInfo.lastEvtPos = this.getCanvasPostion(e)
-        this.canvasInfo.offsetEvtPos = this.getCanvasPostion(e)
       }
     },
     // 移动
@@ -170,13 +173,21 @@ export default {
         this.canvasInfo.offsetEvtPos = this.getCanvasPostion(e)
         this.dotInfo.offsetEvtPos = this.getCanvasPostion(e)
       } else if (this.canvasInfo.status === this.statusConfig.DRAGGING) {
-        this.canvasInfo.dragTarget.x += this.getCanvasPostion(e).x - this.canvasInfo.offsetEvtPos.x
-        this.canvasInfo.dragTarget.y += this.getCanvasPostion(e).y - this.canvasInfo.offsetEvtPos.y
-        // this.dotInfo.dragTarget.x += this.getCanvasPostion(e).x - this.dotInfo.offsetEvtPos.x
-        // this.dotInfo.dragTarget.y += this.getCanvasPostion(e).y - this.dotInfo.offsetEvtPos.y
+        const {dragTarget} = this.canvasInfo
+        const {dragTargets} = this.dotInfo
+        dragTarget.x += this.getCanvasPostion(e).x - this.canvasInfo.offsetEvtPos.x
+        dragTarget.y += this.getCanvasPostion(e).y - this.canvasInfo.offsetEvtPos.y
+        dragTargets.x += this.getCanvasPostion(e).x - this.dotInfo.offsetEvtPos.x
+        dragTargets.y += this.getCanvasPostion(e).y - this.dotInfo.offsetEvtPos.y
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
+        this.dotCirles = []
         this.circles.forEach(a => {
           this.drawCircle(a.x, a.y, a.r)
+          this.dotCirles.push({
+            x: a.x + a.r,
+            y: a.y,
+            r: this.dotRadius
+          })
         });
         this.dotCirles.forEach(a => {
           this.drawDot(a.x, a.y, a.r)
@@ -188,27 +199,27 @@ export default {
         this.dragging = true
         this.dotInfo.status = this.statusConfig.DRAGGING
         this.dotInfo.offsetEvtPos = this.getCanvasPostion(e)
-        this.canvasInfo.offsetEvtPos = this.getCanvasPostion(e)
       } else if (this.dotInfo.status === this.statusConfig.DRAGGING) {
         if(this.dragging){
+          const { dragTargets } = this.dotInfo
+          const { dragTarget } = this.canvasInfo
           const dotPos = {
-            x:this.circles[0].x + this.circles[0].r,
-            y:this.circles[0].y
+            x:dragTarget.x + this.dotRadius,
+            y:dragTarget.y
           }
-          const angle = this.getAngle(this.circles[0],dotPos,this.getCanvasPostion(e))
-          this.canvasInfo.dragTarget.x += this.getCanvasPostion(e).x - this.canvasInfo.offsetEvtPos.x
-          this.canvasInfo.dragTarget.y += this.getCanvasPostion(e).y - this.canvasInfo.offsetEvtPos.y
-          this.dotInfo.dragTarget.x += this.getCanvasPostion(e).x - this.dotInfo.offsetEvtPos.x
-          this.dotInfo.dragTarget.y += this.getCanvasPostion(e).y - this.dotInfo.offsetEvtPos.y
-          const obj = this.getDotMovePosition(this.circles[0], angle)
-          this.dotCirles = []
-          obj.r = this.dotRadius
-          this.dotCirles.push(obj)
+          const angle = this.getAngle(dragTarget,dotPos,this.getCanvasPostion(e))
+          const obj = this.getDotMovePosition(dragTarget, angle)
+          // this.dotCirles = []
+          // obj.r = this.dotRadius
+          // this.dotCirles.push(obj)
+          dragTargets.x += obj.x
+          dragTargets.y += obj.y
+          // dragTargets.x += this.getCanvasPostion(e).x - this.dotInfo.offsetEvtPos.x
+          // dragTargets.y += this.getCanvasPostion(e).y - this.dotInfo.offsetEvtPos.y
           this.ctx.clearRect(0,0,this.canvas.width,this.canvas.height)
           this.circles.forEach(c=>this.drawCircle(c.x,c.y,c.r))
           this.dotCirles.forEach(c=>this.drawDot(c.x,c.y,c.r))
           this.dotInfo.offsetEvtPos = this.getCanvasPostion(e)
-          this.canvasInfo.offsetEvtPos = this.getCanvasPostion(e)
         }
 
       }

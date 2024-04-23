@@ -5,7 +5,7 @@
       <template #left>
         <van-icon name="arrow-left" color="#fff" @click="$router.go(-1)" />
       </template>
-      <template v-slot:title> 关于Yukari Music </template>
+      <template v-slot:title> yy </template>
     </van-nav-bar>
     <!-- 主体内容 -->
     <div class="content">
