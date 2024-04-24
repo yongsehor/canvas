@@ -12,6 +12,7 @@ export default {
   data() {
     
     return {
+      // 得加一个限制，禁止逆时针旋转！！！
       canvas: null,
       ctx: null,
       statusConfig: {
@@ -64,6 +65,112 @@ export default {
           cr:10
         }
       ],
+      arrD:[
+    {
+        "x": 140,
+        "y": 191.99999999990592,
+        "ax": 140,
+        "ay": 200,
+        "acos": 59.99999999999999,
+        "asin": 8.940696716308594e-7
+    },
+    {
+        "x": 169.98333796039273,
+        "y": 195.9999999999527,
+        "ax": 174,
+        "ay": 185,
+        "acos": 30.016662039607265,
+        "asin": 4.4728311955343587e-7
+    },
+    {
+        "x": 169.98333796039273,
+        "y": 195.9999999999527,
+        "ax": 185,
+        "ay": 174,
+        "acos": 30.016662039607265,
+        "asin": 4.4728311955343587e-7
+    },
+    {
+        "x": 230,
+        "y": 195.999999999953,
+        "ax": 200,
+        "ay": 170,
+        "acos": 29.999999999999996,
+        "asin": 4.470348358154297e-7
+    },
+    {
+        "x": 230.01666203960727,
+        "y": 195.9999999999527,
+        "ax": 215,
+        "ay": 174,
+        "acos": 30.016662039607265,
+        "asin": 4.4728311955343587e-7
+    },
+    {
+        "x": 230.01666203960727,
+        "y": 195.9999999999527,
+        "ax": 226,
+        "ay": 185,
+        "acos": 30.016662039607265,
+        "asin": 4.4728311955343587e-7
+    },
+    {
+        "x": 230,
+        "y": 195.999999999953,
+        "ax": 230,
+        "ay": 200,
+        "acos": 29.999999999999996,
+        "asin": 4.470348358154297e-7
+    },
+    {
+        "x": 230.01666203960727,
+        "y": 204.0000000000473,
+        "ax": 226,
+        "ay": 215,
+        "acos": 30.016662039607265,
+        "asin": 4.4728311955343587e-7
+    },
+    {
+        "x": 230.01666203960727,
+        "y": 204.0000000000473,
+        "ax": 215,
+        "ay": 226,
+        "acos": 30.016662039607265,
+        "asin": 4.4728311955343587e-7
+    },
+    {
+        "x": 230,
+        "y": 204.000000000047,
+        "ax": 200,
+        "ay": 230,
+        "acos": 29.999999999999996,
+        "asin": 4.470348358154297e-7
+    },
+    {
+        "x": 169.98333796039273,
+        "y": 204.0000000000473,
+        "ax": 185,
+        "ay": 226,
+        "acos": 30.016662039607265,
+        "asin": 4.4728311955343587e-7
+    },
+    {
+        "x": 169.98333796039273,
+        "y": 204.0000000000473,
+        "ax": 174,
+        "ay": 215,
+        "acos": 30.016662039607265,
+        "asin": 4.4728311955343587e-7
+    },
+    {
+        "x": 140,
+        "y": 191.99999999990592,
+        "ax": 140,
+        "ay": 200,
+        "acos": 59.99999999999999,
+        "asin": 8.940696716308594e-7
+    }
+],
       // 测试数据---后续接口返回的数据绘制不规则圆
       lArr: [
         [
@@ -327,24 +434,8 @@ export default {
         this.canvasInfo.offsetEvtPos = this.getCanvasPostion(e)
       }
     },
-    /**
-     * 根据控制对象找到伴生者
-     * @param {*friendTarget}  当前控制对象
-     * @param {*type} 1,当前控制对象为圆圈；2，圆点
-     * @param {*name} 要返回的是圆圈还是圆点还是不规则圆
-     */
-    getFriendByTarget(friendTarget,type=1,name='') {
-      switch (type) {
-        case 1:
-          return name == 'wheel' ? this.dotCirles.filter(ele => friendTarget.r == ele.cr)[0] : this.lineCirles.filter(ele => friendTarget.r == ele[0].cr)[0]
-        case 2:
-          return name == 'circle' ? this.circles.filter(ele => friendTarget.cr == ele.r)[0] : this.lineCirles.filter(ele => friendTarget.cr == ele[0].cr)[0]
-        default:
-          return null
-      }
-    },
-    // 移动
-    touchMoveEvent(e) {
+     // 移动
+     touchMoveEvent(e) {
       if (this.canvasInfo.status === this.statusConfig.DRAG_START && this.getDistance(this.getCanvasPostion(e), this.canvasInfo.lastEvtPos) > 5) {// 开始拖动圆圈
         this.canvasInfo.status = this.statusConfig.DRAGGING
         this.canvasInfo.offsetEvtPos = this.getCanvasPostion(e)
@@ -373,10 +464,7 @@ export default {
         this.canvasInfo.status = this.statusConfig.WHEELING
         this.canvasInfo.offsetEvtPos = this.getCanvasPostion(e)
       } else if (this.canvasInfo.status === this.statusConfig.WHEELING) {//正在旋转
-        const { wheelTarget } = this.canvasInfo
-        const { dragTarget } = this.canvasInfo
-        const { lineTarget } = this.canvasInfo
-        //处理当前状态圆圈所有点坐标旋转？？？
+        const { wheelTarget,dragTarget,lineTarget } = this.canvasInfo
         let dotPos = {}
         this.circles.forEach(ele => {
           if (ele.r == wheelTarget.cr) {
@@ -389,31 +477,50 @@ export default {
         });
         const canvasPosition = this.getCanvasPostion(e)
         const angleDot = this.getAngle(dragTarget, dotPos, canvasPosition)
-        const angleLine = this.getAngle(dragTarget, wheelTarget, canvasPosition)
         this.getDotMovePosition(angleDot)
-        let arr = []
-        lineTarget.forEach((e,ind)=>{
-          let lineR = Math.sqrt((dragTarget.x - e.x) ** 2 + (dragTarget.y - e.y) ** 2)
-          console.log(e,'e');
-          let obj = {x:null,y:null}
-          if(canvasPosition.x == dragTarget.x){
-            obj.x = dragTarget.x
-          }else if(canvasPosition.x > dragTarget.x){
-            obj.x = Math.cos(angleLine*Math.PI/180)*lineR + dragTarget.x
-          }else{
-            obj.x = dragTarget.x - Math.cos(angleLine*Math.PI/180)*lineR
-          }
-          if(canvasPosition.y == dragTarget.y){
-            obj.y = dragTarget.y
-          }else if(canvasPosition.y > dragTarget.y){
-            obj.y = Math.sin(angleLine*Math.PI/180)*lineR + dragTarget.y
-          }else{
-            obj.y = dragTarget.y - Math.sin(angleLine*Math.PI/180)*lineR
-          }
-          console.log(obj,'obj');
-          arr.push(obj)
-        })
-        console.log(arr,'arr');
+        
+        const angleLine = this.getAngle(dragTarget, wheelTarget, canvasPosition)
+        if(angleLine){
+          let arr = []
+          lineTarget.forEach((e,ind)=>{
+            let lineR = Math.sqrt((dragTarget.x - e.x) ** 2 + (dragTarget.y - e.y) ** 2)
+            let obj = {x:null,y:null}
+            if(e.x < dragTarget.x){
+              obj.x = this.addAndSubtract(dragTarget.x,Math.cos(angleLine*Math.PI/180)*lineR,'subtract')
+            }else{
+              obj.x = this.addAndSubtract(dragTarget.x,Math.cos(angleLine*Math.PI/180)*lineR)
+            }
+            if(e.y <= dragTarget.y){
+              obj.y = this.addAndSubtract(dragTarget.y,Math.sin(angleLine*Math.PI/180)*lineR,'subtract')
+            }else{
+              obj.y = this.addAndSubtract(dragTarget.y,Math.sin(angleLine*Math.PI/180)*lineR)
+            }
+            obj.ax = e.x
+            obj.ay = e.y
+            obj.acos = Math.cos(angleLine*Math.PI/180)*lineR
+            obj.asin = Math.sin(angleLine*Math.PI/180)*lineR
+            // if(canvasPosition.x == dragTarget.x){
+            //   obj.x = dragTarget.x
+            // }else if(canvasPosition.x > dragTarget.x){
+            //   if(e.x < dragTarget.x){
+            //     obj.x = dragTarget.x - Math.cos(angleLine*Math.PI/180)*lineR
+            //   }else{
+            //     obj.x = Math.cos(angleLine*Math.PI/180)*lineR + dragTarget.x
+            //   }
+            // }else{
+            //   obj.x = dragTarget.x - Math.cos(angleLine*Math.PI/180)*lineR
+            // }
+            // if(canvasPosition.y == dragTarget.y){
+            //   obj.y = dragTarget.y
+            // }else if(canvasPosition.y > dragTarget.y){
+            //   obj.y = Math.sin(angleLine*Math.PI/180)*lineR + dragTarget.y
+            // }else{
+            //   obj.y = dragTarget.y - Math.sin(angleLine*Math.PI/180)*lineR
+            // }
+            arr.push(obj)
+          })
+          console.log(arr,'arr');
+        }
         // this.getLineMovePosition(angle,this.getCanvasPostion(e))
         this.ctx.clearRect(0,0,this.canvas.width,this.canvas.height)
         this.circles.forEach(c=>this.drawCircle(c.x,c.y,c.r))
@@ -423,6 +530,44 @@ export default {
         });
         this.canvasInfo.offsetEvtPos = this.getCanvasPostion(e)
       }
+    },
+    // 触摸抬起
+    touchEndEvent(e){
+      if (this.canvasInfo.status === this.statusConfig.DRAGGING || this.canvasInfo.status === this.statusConfig.WHEELING) {
+        this.canvasInfo.status = this.statusConfig.IDLE
+      }
+    },
+    /**
+     * 根据控制对象找到伴生者
+     * @param {*friendTarget}  当前控制对象
+     * @param {*type} 1,当前控制对象为圆圈；2，圆点
+     * @param {*name} 要返回的是圆圈还是圆点还是不规则圆
+     */
+    getFriendByTarget(friendTarget,type=1,name='') {
+      switch (type) {
+        case 1:
+          return name == 'wheel' ? this.dotCirles.filter(ele => friendTarget.r == ele.cr)[0] : this.lineCirles.filter(ele => friendTarget.r == ele[0].cr)[0]
+        case 2:
+          return name == 'circle' ? this.circles.filter(ele => friendTarget.cr == ele.r)[0] : this.lineCirles.filter(ele => friendTarget.cr == ele[0].cr)[0]
+        default:
+          return null
+      }
+    },
+    /**
+     * 加减法
+     * type:add加，subtract减
+     */
+    addAndSubtract(num1, num2,type='add') {
+      const num1Parts = num1.toString().split('.');
+      const num2Parts = num2.toString().split('.');
+      const maxDecimalPlaces = Math.max(num1Parts.length === 1 ? 0 : num1Parts[1].length, num2Parts.length === 1 ? 0 : num2Parts[1].length);
+      
+      const multiplier = Math.pow(10, maxDecimalPlaces);
+      const num1Int = Number(num1Parts[0]) * multiplier + (num1Parts.length === 2 ? Number(num1Parts[1]) : 0);
+      const num2Int = Number(num2Parts[0]) * multiplier + (num2Parts.length === 2 ? Number(num2Parts[1]) : 0);
+      
+      const result = type == 'add' ? (num1Int + num2Int) / multiplier : (num1Int - num2Int) / multiplier ;
+      return result;
     },
     /**
      * 获取拖动后当前拖动状态的所有点的新坐标
@@ -458,12 +603,6 @@ export default {
       const { wheelTarget,dragTarget } = this.canvasInfo
       wheelTarget.x = Math.cos(angle*Math.PI/180)*(dragTarget.r) + dragTarget.x
       wheelTarget.y = dragTarget.y + Math.sin(angle*Math.PI/180)*(dragTarget.r)
-    },
-    // 触摸抬起
-    touchEndEvent(e){
-      if (this.canvasInfo.status === this.statusConfig.DRAGGING || this.canvasInfo.status === this.statusConfig.WHEELING) {
-        this.canvasInfo.status = this.statusConfig.IDLE
-      }
     },
     /**
      * 计算旋转角度
