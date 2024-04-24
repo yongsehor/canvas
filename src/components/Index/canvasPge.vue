@@ -53,7 +53,7 @@ export default {
       // 测试数据---后续通过接口数据计算出每个不规则圆的中心点，再根据半径标出圆点
       dArr: [
         {
-          x: 230,
+          x: 170,
           y: 200,
           r: 5,
           cr:30
@@ -65,133 +65,27 @@ export default {
           cr:10
         }
       ],
-      arrD:[
-    {
-        "x": 140,
-        "y": 191.99999999990592,
-        "ax": 140,
-        "ay": 200,
-        "acos": 59.99999999999999,
-        "asin": 8.940696716308594e-7
-    },
-    {
-        "x": 169.98333796039273,
-        "y": 195.9999999999527,
-        "ax": 174,
-        "ay": 185,
-        "acos": 30.016662039607265,
-        "asin": 4.4728311955343587e-7
-    },
-    {
-        "x": 169.98333796039273,
-        "y": 195.9999999999527,
-        "ax": 185,
-        "ay": 174,
-        "acos": 30.016662039607265,
-        "asin": 4.4728311955343587e-7
-    },
-    {
-        "x": 230,
-        "y": 195.999999999953,
-        "ax": 200,
-        "ay": 170,
-        "acos": 29.999999999999996,
-        "asin": 4.470348358154297e-7
-    },
-    {
-        "x": 230.01666203960727,
-        "y": 195.9999999999527,
-        "ax": 215,
-        "ay": 174,
-        "acos": 30.016662039607265,
-        "asin": 4.4728311955343587e-7
-    },
-    {
-        "x": 230.01666203960727,
-        "y": 195.9999999999527,
-        "ax": 226,
-        "ay": 185,
-        "acos": 30.016662039607265,
-        "asin": 4.4728311955343587e-7
-    },
-    {
-        "x": 230,
-        "y": 195.999999999953,
-        "ax": 230,
-        "ay": 200,
-        "acos": 29.999999999999996,
-        "asin": 4.470348358154297e-7
-    },
-    {
-        "x": 230.01666203960727,
-        "y": 204.0000000000473,
-        "ax": 226,
-        "ay": 215,
-        "acos": 30.016662039607265,
-        "asin": 4.4728311955343587e-7
-    },
-    {
-        "x": 230.01666203960727,
-        "y": 204.0000000000473,
-        "ax": 215,
-        "ay": 226,
-        "acos": 30.016662039607265,
-        "asin": 4.4728311955343587e-7
-    },
-    {
-        "x": 230,
-        "y": 204.000000000047,
-        "ax": 200,
-        "ay": 230,
-        "acos": 29.999999999999996,
-        "asin": 4.470348358154297e-7
-    },
-    {
-        "x": 169.98333796039273,
-        "y": 204.0000000000473,
-        "ax": 185,
-        "ay": 226,
-        "acos": 30.016662039607265,
-        "asin": 4.4728311955343587e-7
-    },
-    {
-        "x": 169.98333796039273,
-        "y": 204.0000000000473,
-        "ax": 174,
-        "ay": 215,
-        "acos": 30.016662039607265,
-        "asin": 4.4728311955343587e-7
-    },
-    {
-        "x": 140,
-        "y": 191.99999999990592,
-        "ax": 140,
-        "ay": 200,
-        "acos": 59.99999999999999,
-        "asin": 8.940696716308594e-7
-    }
-],
       // 测试数据---后续接口返回的数据绘制不规则圆
       lArr: [
         [
           {
-            x: 140,
+            x: 165,
             y: 200,
             cr:30
           },
           {
-            x: 174,
+            x: 170,
             y: 185,
             cr:30
           },
           {
-            x: 185,
+            x: 180,
             y: 174,
             cr:30
           },
           {
             x: 200,
-            y: 170,
+            y: 165,
             cr:30
           },
           {
@@ -201,41 +95,41 @@ export default {
           },
           {
             x: 226,
-            y: 185,
+            y: 180,
             cr:30
           },
           {
-            x: 230,
+            x: 232,
             y: 200,
             cr:30
           },
           {
             x: 226,
-            y: 215,
+            y: 220,
             cr:30
           },
           {
             x: 215,
-            y: 226,
-            cr:30
-          },
-          {
-            x: 200,
             y: 230,
             cr:30
           },
           {
+            x: 200,
+            y: 233,
+            cr:30
+          },
+          {
             x: 185,
-            y: 226,
+            y: 230,
             cr:30
           },
           {
             x: 174,
-            y: 215,
+            y: 220,
             cr:30
           },
           {
-            x: 140,
+            x: 165,
             y: 200,
             cr:30
           }
@@ -344,7 +238,7 @@ export default {
       this.ctx.save()
       this.ctx.beginPath()
       // 白色圆圈
-      // this.ctx.strokeStyle = "white";
+      this.ctx.strokeStyle = "white";
       this.ctx.arc(cx, cy, r, 0, Math.PI * 2)
       this.ctx.stroke()
       this.ctx.closePath()
@@ -465,63 +359,18 @@ export default {
         this.canvasInfo.offsetEvtPos = this.getCanvasPostion(e)
       } else if (this.canvasInfo.status === this.statusConfig.WHEELING) {//正在旋转
         const { wheelTarget,dragTarget,lineTarget } = this.canvasInfo
-        let dotPos = {}
-        this.circles.forEach(ele => {
-          if (ele.r == wheelTarget.cr) {
-            dotPos = {
-              x: ele.x + ele.r,
-              y: ele.y,
-              r: ele.r
-            }
-          }
-        });
         const canvasPosition = this.getCanvasPostion(e)
-        const angleDot = this.getAngle(dragTarget, dotPos, canvasPosition)
-        this.getDotMovePosition(angleDot)
-        
-        const angleLine = this.getAngle(dragTarget, wheelTarget, canvasPosition)
-        if(angleLine){
-          let arr = []
-          lineTarget.forEach((e,ind)=>{
-            let lineR = Math.sqrt((dragTarget.x - e.x) ** 2 + (dragTarget.y - e.y) ** 2)
-            let obj = {x:null,y:null}
-            if(e.x < dragTarget.x){
-              obj.x = this.addAndSubtract(dragTarget.x,Math.cos(angleLine*Math.PI/180)*lineR,'subtract')
-            }else{
-              obj.x = this.addAndSubtract(dragTarget.x,Math.cos(angleLine*Math.PI/180)*lineR)
-            }
-            if(e.y <= dragTarget.y){
-              obj.y = this.addAndSubtract(dragTarget.y,Math.sin(angleLine*Math.PI/180)*lineR,'subtract')
-            }else{
-              obj.y = this.addAndSubtract(dragTarget.y,Math.sin(angleLine*Math.PI/180)*lineR)
-            }
-            obj.ax = e.x
-            obj.ay = e.y
-            obj.acos = Math.cos(angleLine*Math.PI/180)*lineR
-            obj.asin = Math.sin(angleLine*Math.PI/180)*lineR
-            // if(canvasPosition.x == dragTarget.x){
-            //   obj.x = dragTarget.x
-            // }else if(canvasPosition.x > dragTarget.x){
-            //   if(e.x < dragTarget.x){
-            //     obj.x = dragTarget.x - Math.cos(angleLine*Math.PI/180)*lineR
-            //   }else{
-            //     obj.x = Math.cos(angleLine*Math.PI/180)*lineR + dragTarget.x
-            //   }
-            // }else{
-            //   obj.x = dragTarget.x - Math.cos(angleLine*Math.PI/180)*lineR
-            // }
-            // if(canvasPosition.y == dragTarget.y){
-            //   obj.y = dragTarget.y
-            // }else if(canvasPosition.y > dragTarget.y){
-            //   obj.y = Math.sin(angleLine*Math.PI/180)*lineR + dragTarget.y
-            // }else{
-            //   obj.y = dragTarget.y - Math.sin(angleLine*Math.PI/180)*lineR
-            // }
-            arr.push(obj)
+        const angle = this.getAngle(dragTarget, wheelTarget, canvasPosition)
+        if (angle) {
+          let obj1 = this.rotatePoint(dragTarget.x, dragTarget.y, wheelTarget.x, wheelTarget.y, angle)
+          wheelTarget.x = obj1.x
+          wheelTarget.y = obj1.y
+          lineTarget.forEach(ele => {
+            let obj = this.rotatePoint(dragTarget.x, dragTarget.y, ele.x, ele.y, angle)
+            ele.x = obj.x
+            ele.y = obj.y
           })
-          console.log(arr,'arr');
         }
-        // this.getLineMovePosition(angle,this.getCanvasPostion(e))
         this.ctx.clearRect(0,0,this.canvas.width,this.canvas.height)
         this.circles.forEach(c=>this.drawCircle(c.x,c.y,c.r))
         this.dotCirles.forEach(c=>this.drawDot(c.x,c.y,c.r))
@@ -554,57 +403,6 @@ export default {
       }
     },
     /**
-     * 加减法
-     * type:add加，subtract减
-     */
-    addAndSubtract(num1, num2,type='add') {
-      const num1Parts = num1.toString().split('.');
-      const num2Parts = num2.toString().split('.');
-      const maxDecimalPlaces = Math.max(num1Parts.length === 1 ? 0 : num1Parts[1].length, num2Parts.length === 1 ? 0 : num2Parts[1].length);
-      
-      const multiplier = Math.pow(10, maxDecimalPlaces);
-      const num1Int = Number(num1Parts[0]) * multiplier + (num1Parts.length === 2 ? Number(num1Parts[1]) : 0);
-      const num2Int = Number(num2Parts[0]) * multiplier + (num2Parts.length === 2 ? Number(num2Parts[1]) : 0);
-      
-      const result = type == 'add' ? (num1Int + num2Int) / multiplier : (num1Int - num2Int) / multiplier ;
-      return result;
-    },
-    /**
-     * 获取拖动后当前拖动状态的所有点的新坐标
-     * @param {*} angle 旋转角度
-     * @param {*} pos 当前触点坐标
-     */
-    getLineMovePosition(angle,pos) {
-      const { dragTarget,lineTarget } = this.canvasInfo
-      // const cy = this.circles.filter(e=>e.r = wheelTarget.cr)[0].y
-      // const cx = this.circles.filter(e=>e.r = wheelTarget.cr)[0].x
-      // if (pos.y == cy) {
-      //   wheelTarget.y = dragTarget.y
-      // }else if(pos.y > cy){
-      //   wheelTarget.y = dragTarget.y + Math.sin(angle*Math.PI/180)*(dragTarget.r)
-      // }else{
-      //   wheelTarget.y = dragTarget.y - Math.sin(angle*Math.PI/180)*(dragTarget.r)
-      // }
-      // if (pos.x == cx) {
-      //   wheelTarget.x = dragTarget.x
-      // }else if(pos.x > cx){
-      //   wheelTarget.x = Math.cos(angle*Math.PI/180)*(dragTarget.r) + dragTarget.x
-      // }else{
-      //   wheelTarget.x = dragTarget.x - Math.cos(angle*Math.PI/180)*(dragTarget.r)
-      // }
-      
-      lineTarget.forEach(e=>{
-        const lineR = Math.sqrt((dragTarget.x - e.x) ** 2 + (dragTarget.y - e.y) ** 2)
-        e.x = Math.cos(angle*Math.PI/180)*lineR + dragTarget.x
-        e.y = Math.sin(angle*Math.PI/180)*lineR + dragTarget.y
-      })
-    },
-    getDotMovePosition(angle) {
-      const { wheelTarget,dragTarget } = this.canvasInfo
-      wheelTarget.x = Math.cos(angle*Math.PI/180)*(dragTarget.r) + dragTarget.x
-      wheelTarget.y = dragTarget.y + Math.sin(angle*Math.PI/180)*(dragTarget.r)
-    },
-    /**
      * 计算旋转角度
      * param A 圆心坐标
      * param B 圆点坐标
@@ -619,6 +417,18 @@ export default {
       var modAC = Math.sqrt(AC.x * AC.x + AC.y * AC.y);
       var angle = Math.acos(dotProduct / (modAB * modAC));
       return angle * (180 / Math.PI); 
+    },
+    // 计算旋转后的点的坐标
+    rotatePoint(cx, cy, x, y, angle) {
+      // 计算旋转后的点相对于圆心的向量
+      const vx = x - cx;
+      const vy = y - cy;
+
+      // 计算旋转后的点的坐标
+      const newX = cx + (vx * Math.cos(angle) - vy * Math.sin(angle));
+      const newY = cy + (vx * Math.sin(angle) + vy * Math.cos(angle));
+
+      return { x:newX, y:newY };
     }
   },
   beforeDestroy() {
