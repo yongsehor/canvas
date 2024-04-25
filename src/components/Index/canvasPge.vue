@@ -244,13 +244,6 @@ export default {
       this.ctx.closePath()
       this.ctx.restore()
     },
-    getLinePostion(xmove,ymove){
-      const { lineTarget } = this.canvasInfo
-      lineTarget.forEach(e=>{
-        e.x += xmove
-        e.y += ymove
-      })
-    },
     // 绘制不规则圆圈
     drawLineCircle(points) {
       this.ctx.save()
@@ -277,6 +270,14 @@ export default {
       this.ctx.beginPath();
       this.ctx.arc(cx, cy, r, 0, 2 * Math.PI);
       this.ctx.fill();
+    },
+    //拖动不规则圆球坐标
+    getLinePostion(xmove,ymove){
+      const { lineTarget } = this.canvasInfo
+      lineTarget.forEach(e=>{
+        e.x += xmove
+        e.y += ymove
+      })
     },
     //判断是否在圆内
     ifInCircle(pos){
@@ -423,11 +424,9 @@ export default {
       // 计算旋转后的点相对于圆心的向量
       const vx = x - cx;
       const vy = y - cy;
-
       // 计算旋转后的点的坐标
       const newX = cx + (vx * Math.cos(angle) - vy * Math.sin(angle));
       const newY = cy + (vx * Math.sin(angle) + vy * Math.cos(angle));
-
       return { x:newX, y:newY };
     }
   },
