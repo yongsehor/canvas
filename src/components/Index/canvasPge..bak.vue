@@ -12,10 +12,9 @@ export default {
   data() {
     
     return {
-      wheelDirection:true,
+      // 得加一个限制，禁止逆时针旋转！！！
       canvas: null,
       ctx: null,
-      startAngle:0,
       statusConfig: {
         IDLE: 0,
         DRAG_START: 1,//开始拖动
@@ -358,33 +357,27 @@ export default {
       } else if (this.canvasInfo.status === this.statusConfig.WHEEL_START && this.getDistance(this.getCanvasPostion(e), this.canvasInfo.lastEvtPos) > 5) {//开始旋转
         this.canvasInfo.status = this.statusConfig.WHEELING
         this.canvasInfo.offsetEvtPos = this.getCanvasPostion(e)
-        this.onDragStart(this.getAngleFromMousePosition(this.canvasInfo.dragTarget,this.canvasInfo.wheelTarget))
       } else if (this.canvasInfo.status === this.statusConfig.WHEELING) {//正在旋转
         const { wheelTarget,dragTarget,lineTarget } = this.canvasInfo
         const canvasPosition = this.getCanvasPostion(e)
-        this.onDragEnd(this.getAngleFromMousePosition(dragTarget,canvasPosition))
         const angle = this.getAngle(dragTarget, wheelTarget, canvasPosition)
         if (angle) {
-          // if()
-          let obj1 = this.rotatePoint(dragTarget.x, dragTarget.y, wheelTarget.x, wheelTarget.y, angle,canvasPosition)
+          let obj1 = this.rotatePoint(dragTarget.x, dragTarget.y, wheelTarget.x, wheelTarget.y, angle)
           wheelTarget.x = obj1.x
           wheelTarget.y = obj1.y
           lineTarget.forEach(ele => {
-            let obj = this.rotatePoint(dragTarget.x, dragTarget.y, ele.x, ele.y, angle,canvasPosition)
+            let obj = this.rotatePoint(dragTarget.x, dragTarget.y, ele.x, ele.y, angle)
             ele.x = obj.x
             ele.y = obj.y
           })
-          console.log(wheelTarget,'wheelTarget');
-          console.log(lineTarget,'lineTarget');
-          console.log(angle,'angle');
-          this.ctx.clearRect(0,0,this.canvas.width,this.canvas.height)
-          this.circles.forEach(c=>this.drawCircle(c.x,c.y,c.r))
-          this.dotCirles.forEach(c=>this.drawDot(c.x,c.y,c.r))
-          this.lineCirles.forEach(a => {
-            this.drawLineCircle(a)
-          });
-          this.canvasInfo.offsetEvtPos = this.getCanvasPostion(e)
         }
+        this.ctx.clearRect(0,0,this.canvas.width,this.canvas.height)
+        this.circles.forEach(c=>this.drawCircle(c.x,c.y,c.r))
+        this.dotCirles.forEach(c=>this.drawDot(c.x,c.y,c.r))
+        this.lineCirles.forEach(a => {
+          this.drawLineCircle(a)
+        });
+        this.canvasInfo.offsetEvtPos = this.getCanvasPostion(e)
       }
     },
     // 触摸抬起
@@ -426,49 +419,14 @@ export default {
       return angle * (180 / Math.PI); 
     },
     // 计算旋转后的点的坐标
-    rotatePoint(cx, cy, x, y, angle,touch) {
-      console.log(touch,'touch');
+    rotatePoint(cx, cy, x, y, angle) {
       // 计算旋转后的点相对于圆心的向量
       const vx = x - cx;
       const vy = y - cy;
-      let newX = null
-      let newY = null
-      // 判断象限，再根据旋转方向 计算点 坐标移动后的新坐标
-      if(this.wheelDirection){//true---顺时针
-        
-        if(touch.y < cy){//x加
-          newX = cx + Math.abs(vx * Math.cos(angle) - vy * Math.sin(angle));
-        }else{//x减
-          newX = cx - Math.abs(vx * Math.cos(angle) - vy * Math.sin(angle));
-        }
-        if(touch.x < cx){//y减
-          newY = cy - Math.abs(vx * Math.sin(angle) + vy * Math.cos(angle));
-        }else{//y加
-          newY = cy + Math.abs(vx * Math.sin(angle) + vy * Math.cos(angle));
-        }
-      }else{//逆时针
-        if(touch.y < cy){//x减
-          newX = cx - Math.abs(vx * Math.cos(angle) - vy * Math.sin(angle));
-        }else{//x加
-          newX = cx + Math.abs(vx * Math.cos(angle) - vy * Math.sin(angle));
-        }
-        if(touch.x < cx){//y加
-          newY = cy + Math.abs(vx * Math.sin(angle) + vy * Math.cos(angle));
-        }else{//y减
-          newY = cy - Math.abs(vx * Math.sin(angle) + vy * Math.cos(angle));
-        }
-      }
+      // 计算旋转后的点的坐标
+      const newX = cx + (vx * Math.cos(angle) - vy * Math.sin(angle));
+      const newY = cy + (vx * Math.sin(angle) + vy * Math.cos(angle));
       return { x:newX, y:newY };
-    },
-    onDragStart(angle) {
-      this.startAngle = angle; // 记录开始拖动时的角度
-    },
-    onDragEnd(angle) {
-      this.wheelDirection = angle - this.startAngle > 0 
-    },
-    getAngleFromMousePosition(center,mouse) {
-      // 返回[0, 2π]范围内的角度值
-      return Math.atan2(mouse.y - center.y, mouse.x - center.x);
     }
   },
   beforeDestroy() {

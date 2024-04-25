@@ -12,9 +12,10 @@ export default {
   data() {
     
     return {
-      // 得加一个限制，禁止逆时针旋转！！！
+      wheelDirection:true,
       canvas: null,
       ctx: null,
+      startAngle:0,
       statusConfig: {
         IDLE: 0,
         DRAG_START: 1,//开始拖动
@@ -28,12 +29,14 @@ export default {
         lineTarget: null,//不规则圆
         dragTarget: null,//圆圈
         wheelTarget: null,//圆点
+        diameterTarget: null,//直径
         lastEvtPos: { x: null, y: null },
         offsetEvtPos: { x: null, y: null }//偏移量：拖动时防止回到圆心
       },
       circles:[],//存储画布上的圆圈
       dotCirles: [],//存储画布上的圆点
       lineCirles: [],//存储画布上的不规则圆
+      diameters: [],//存储画布上的直径
       canvasWidth:0,
       canvasHeight:0,
       dotRadius:5,//所有用来控制的圆点的半径
@@ -85,7 +88,7 @@ export default {
           },
           {
             x: 200,
-            y: 165,
+            y: 155,
             cr:30
           },
           {
@@ -201,6 +204,33 @@ export default {
             cr:10
           }
         ]
+      ],
+      //测试数据---后续接口返回的数据绘制直径
+      rArr: [
+        [
+          {
+            x: 170,
+            y: 200,
+            cr: 30
+          },
+          {
+            x: 230,
+            y: 200,
+            cr: 30
+          }
+        ],
+        [
+          {
+            x: 90,
+            y: 100,
+            cr: 10
+          },
+          {
+            x: 110,
+            y: 100,
+            cr: 10
+          }
+        ]
       ]
     };
   },
@@ -215,6 +245,13 @@ export default {
       this.ctx = this.canvas.getContext('2d')
       this.draw()
     },
+    drawAll() {
+      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
+      this.circles.forEach(a => this.drawCircle(a.x, a.y, a.r));
+      this.dotCirles.forEach(a => this.drawDot(a.x, a.y, a.r));
+      this.diameters.forEach(a => this.drawDiameter(a));
+      this.lineCirles.forEach(a => this.drawLineCircle(a));
+    },
     draw() {
       this.canvasInfo.status = this.statusConfig.IDLE
       this.cArr.forEach( a => {
@@ -228,6 +265,10 @@ export default {
       this.lArr.forEach( a => {
         this.drawLineCircle(a)
         this.lineCirles.push(a)
+      });
+      this.rArr.forEach( a => {
+        this.drawDiameter(a)
+        this.diameters.push(a)
       });
       this.canvas.addEventListener('touchstart', e=>this.touchStartEvent(e))
       this.canvas.addEventListener('touchmove', e=>this.touchMoveEvent(e))
@@ -265,6 +306,18 @@ export default {
       this.ctx.closePath()
       this.ctx.restore()
     },
+    // 绘制直径
+    drawDiameter(points) {
+      this.ctx.save()
+      this.ctx.beginPath()
+      for (let index = 0; index < points.length; index++) {
+        const ele = points[index];
+        this.ctx.lineTo(ele.x,ele.y);
+      }
+      this.ctx.stroke()
+      this.ctx.closePath()
+      this.ctx.restore()
+    },
     //绘制圆上的小圆点
     drawDot(cx,cy,r) {
       this.ctx.beginPath();
@@ -272,9 +325,13 @@ export default {
       this.ctx.fill();
     },
     //拖动对象坐标变动
-    dragChangePostion(xmove,ymove){
-      const { wheelTarget,dragTarget,lineTarget } = this.canvasInfo
+    dragChangePostion(xmove, ymove) {
+      const { wheelTarget, dragTarget, lineTarget, diameterTarget } = this.canvasInfo
       lineTarget.forEach(e=>{
+        e.x += xmove
+        e.y += ymove
+      })
+      diameterTarget.forEach(e=>{
         e.x += xmove
         e.y += ymove
       })
@@ -286,7 +343,8 @@ export default {
     //判断是否在圆内
     ifInCircle(pos){
       for (let index = 0; index < this.circles.length; index++) {
-        if (this.getDistance(this.circles[index], pos) < this.circles[index].r) {
+        console.log(this.getDistance(this.circles[index], pos),'distanceC');
+        if (this.getDistance(this.circles[index], pos) < (this.circles[index].r - 5)) {
           return this.circles[index]
         }
       }
@@ -295,6 +353,7 @@ export default {
     //判断是否在小圆点内
     ifInDotCircle(pos){
       for (let index = 0; index < this.dotCirles.length; index++) {
+        console.log(this.getDistance(this.dotCirles[index], pos), 'distanceD');
         if (this.getDistance(this.dotCirles[index], pos) < this.dotCirles[index].r) {
           return this.dotCirles[index]
         }
@@ -313,29 +372,29 @@ export default {
       return Math.sqrt((p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2)
     },
     // 触摸按下
-    touchStartEvent(e){
-      const circleRef = this.ifInCircle(this.getCanvasPostion(e))
+    touchStartEvent(e) {
       const dotRef = this.ifInDotCircle(this.getCanvasPostion(e))
-      if (circleRef) {
-        this.canvasInfo.dragTarget = circleRef
-        this.canvasInfo.wheelTarget = this.getFriendByTarget(circleRef, 1,'wheel')
-        this.canvasInfo.lineTarget = this.getFriendByTarget(circleRef, 1,'line')
-        this.canvasInfo.status = this.statusConfig.DRAG_START
-        this.canvasInfo.lastEvtPos = this.getCanvasPostion(e)
-        this.canvasInfo.offsetEvtPos = this.getCanvasPostion(e)
-      }
       if (dotRef) {
-        this.canvasInfo.dragTarget = this.getFriendByTarget(dotRef, 2,'circle')
-        this.canvasInfo.lineTarget = this.getFriendByTarget(dotRef, 2,'line')
+        this.getFriendByTarget(dotRef, 2)
         this.canvasInfo.wheelTarget = dotRef
         this.canvasInfo.status = this.statusConfig.WHEEL_START
         this.canvasInfo.lastEvtPos = this.getCanvasPostion(e)
         this.canvasInfo.offsetEvtPos = this.getCanvasPostion(e)
+        return
       }
+      const circleRef = this.ifInCircle(this.getCanvasPostion(e))
+      if (circleRef) {
+        this.canvasInfo.dragTarget = circleRef
+        this.getFriendByTarget(circleRef)
+        this.canvasInfo.status = this.statusConfig.DRAG_START
+        this.canvasInfo.lastEvtPos = this.getCanvasPostion(e)
+        this.canvasInfo.offsetEvtPos = this.getCanvasPostion(e)
+      }
+      
     },
      // 移动
-     touchMoveEvent(e) {
-      if (this.canvasInfo.status === this.statusConfig.DRAG_START && this.getDistance(this.getCanvasPostion(e), this.canvasInfo.lastEvtPos) > 5) {// 开始拖动圆圈
+    touchMoveEvent(e) {
+      if (this.canvasInfo.status === this.statusConfig.DRAG_START && this.getDistance(this.getCanvasPostion(e), this.canvasInfo.lastEvtPos) > 10) {// 开始拖动圆圈
         this.canvasInfo.status = this.statusConfig.DRAGGING
         this.canvasInfo.offsetEvtPos = this.getCanvasPostion(e)
       } else if (this.canvasInfo.status === this.statusConfig.DRAGGING) {//正在拖动圆圈
@@ -343,41 +402,32 @@ export default {
         const ymove = this.getCanvasPostion(e).y - this.canvasInfo.offsetEvtPos.y
         // 拖动改变坐标点
         this.dragChangePostion(xmove,ymove)
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
-        this.circles.forEach(a => {
-          this.drawCircle(a.x, a.y, a.r)
-        });
-        this.dotCirles.forEach(a => {
-          this.drawDot(a.x, a.y, a.r)
-        });
-        this.lineCirles.forEach(a => {
-          this.drawLineCircle(a)
-        });
+        this.drawAll()
         this.canvasInfo.offsetEvtPos = this.getCanvasPostion(e)
       } else if (this.canvasInfo.status === this.statusConfig.WHEEL_START && this.getDistance(this.getCanvasPostion(e), this.canvasInfo.lastEvtPos) > 5) {//开始旋转
         this.canvasInfo.status = this.statusConfig.WHEELING
         this.canvasInfo.offsetEvtPos = this.getCanvasPostion(e)
       } else if (this.canvasInfo.status === this.statusConfig.WHEELING) {//正在旋转
-        const { wheelTarget,dragTarget,lineTarget } = this.canvasInfo
+        const { wheelTarget, dragTarget, lineTarget, diameterTarget } = this.canvasInfo
         const canvasPosition = this.getCanvasPostion(e)
         const angle = this.getAngle(dragTarget, wheelTarget, canvasPosition)
         if (angle) {
-          let obj1 = this.rotatePoint(dragTarget.x, dragTarget.y, wheelTarget.x, wheelTarget.y, angle)
+          let obj1 = this.rotatePoint(dragTarget.x, dragTarget.y, wheelTarget.x, wheelTarget.y, angle*Math.PI/180)
           wheelTarget.x = obj1.x
           wheelTarget.y = obj1.y
           lineTarget.forEach(ele => {
-            let obj = this.rotatePoint(dragTarget.x, dragTarget.y, ele.x, ele.y, angle)
+            let obj = this.rotatePoint(dragTarget.x, dragTarget.y, ele.x, ele.y, angle * Math.PI / 180)
             ele.x = obj.x
             ele.y = obj.y
           })
+          diameterTarget.forEach(ele => {
+            let obj = this.rotatePoint(dragTarget.x, dragTarget.y, ele.x, ele.y, angle * Math.PI / 180)
+            ele.x = obj.x
+            ele.y = obj.y
+          })
+          this.drawAll()
+          this.canvasInfo.offsetEvtPos = this.getCanvasPostion(e)
         }
-        this.ctx.clearRect(0,0,this.canvas.width,this.canvas.height)
-        this.circles.forEach(c=>this.drawCircle(c.x,c.y,c.r))
-        this.dotCirles.forEach(c=>this.drawDot(c.x,c.y,c.r))
-        this.lineCirles.forEach(a => {
-          this.drawLineCircle(a)
-        });
-        this.canvasInfo.offsetEvtPos = this.getCanvasPostion(e)
       }
     },
     // 触摸抬起
@@ -389,17 +439,17 @@ export default {
     /**
      * 根据控制对象找到伴生者
      * @param {*friendTarget}  当前控制对象
-     * @param {*type} 1,当前控制对象为圆圈；2，圆点
-     * @param {*name} 要返回的是圆圈还是圆点还是不规则圆
+     * @param {*type} 1,当前控制对象为圆圈；2，圆点 
      */
-    getFriendByTarget(friendTarget,type=1,name='') {
-      switch (type) {
-        case 1:
-          return name == 'wheel' ? this.dotCirles.filter(ele => friendTarget.r == ele.cr)[0] : this.lineCirles.filter(ele => friendTarget.r == ele[0].cr)[0]
-        case 2:
-          return name == 'circle' ? this.circles.filter(ele => friendTarget.cr == ele.r)[0] : this.lineCirles.filter(ele => friendTarget.cr == ele[0].cr)[0]
-        default:
-          return null
+    getFriendByTarget(friendTarget, type = 1) {
+      if (type == 1) {
+        this.canvasInfo.wheelTarget = this.dotCirles.filter(ele => friendTarget.r == ele.cr)[0]
+        this.canvasInfo.lineTarget = this.lineCirles.filter(ele => friendTarget.r == ele[0].cr)[0]
+        this.canvasInfo.diameterTarget = this.diameters.filter(ele => friendTarget.r == ele[0].cr)[0]
+      } else {
+        this.canvasInfo.dragTarget = this.circles.filter(ele => friendTarget.cr == ele.r)[0]
+        this.canvasInfo.lineTarget = this.lineCirles.filter(ele => friendTarget.cr == ele[0].cr)[0]
+        this.canvasInfo.diameterTarget = this.diameters.filter(ele => friendTarget.cr == ele[0].cr)[0]
       }
     },
     /**
@@ -423,9 +473,10 @@ export default {
       // 计算旋转后的点相对于圆心的向量
       const vx = x - cx;
       const vy = y - cy;
-      // 计算旋转后的点的坐标
-      const newX = cx + (vx * Math.cos(angle) - vy * Math.sin(angle));
-      const newY = cy + (vx * Math.sin(angle) + vy * Math.cos(angle));
+      let newX = null
+      let newY = null
+      newX = cx + (vx * Math.cos(angle) - vy * Math.sin(angle));
+      newY = cx + (vx * Math.sin(angle) + vy * Math.cos(angle));
       return { x:newX, y:newY };
     }
   },
