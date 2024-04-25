@@ -271,13 +271,17 @@ export default {
       this.ctx.arc(cx, cy, r, 0, 2 * Math.PI);
       this.ctx.fill();
     },
-    //拖动不规则圆球坐标
-    getLinePostion(xmove,ymove){
-      const { lineTarget } = this.canvasInfo
+    //拖动对象坐标变动
+    dragChangePostion(xmove,ymove){
+      const { wheelTarget,dragTarget,lineTarget } = this.canvasInfo
       lineTarget.forEach(e=>{
         e.x += xmove
         e.y += ymove
       })
+      dragTarget.x += xmove
+      dragTarget.y += ymove
+      wheelTarget.x += xmove
+      wheelTarget.y += ymove
     },
     //判断是否在圆内
     ifInCircle(pos){
@@ -335,15 +339,10 @@ export default {
         this.canvasInfo.status = this.statusConfig.DRAGGING
         this.canvasInfo.offsetEvtPos = this.getCanvasPostion(e)
       } else if (this.canvasInfo.status === this.statusConfig.DRAGGING) {//正在拖动圆圈
-        const { wheelTarget,dragTarget } = this.canvasInfo
         const xmove = this.getCanvasPostion(e).x - this.canvasInfo.offsetEvtPos.x
         const ymove = this.getCanvasPostion(e).y - this.canvasInfo.offsetEvtPos.y
-        dragTarget.x += xmove
-        dragTarget.y += ymove
-        wheelTarget.x += xmove
-        wheelTarget.y += ymove
-        // 拖动不规则圆
-        this.getLinePostion(xmove,ymove)
+        // 拖动改变坐标点
+        this.dragChangePostion(xmove,ymove)
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
         this.circles.forEach(a => {
           this.drawCircle(a.x, a.y, a.r)
