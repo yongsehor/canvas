@@ -1,0 +1,659 @@
+
+<html>
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>canvas中的拖拽，缩放，旋转</title>
+    <meta charset="utf-8"/>
+    <style type="text/css">
+        .canvas-container {
+            border: 1px solid #aaa;
+            width: 302px;
+            margin: 0 auto;
+        }
+
+        .box-container {
+            margin-top: 20px;
+        }
+
+        .red-box {
+            background-color: #f00;
+            width: 60px;
+            height: 40px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="canvas-container">
+        <canvas width='300' height="300"></canvas>
+    </div>
+    <div class="box-container">
+        <div class="red-box"></div>
+    </div>
+</body>
+
+<script type="text/javascript">
+    const BOX_PADDING = 10;
+    const ICON_HEIGHT = 20;
+    const ROTATE_ICON =
+        'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA70lEQVQ4T7XTL0vDURTG8c80aJVhEWx2u2AyTYNonmAwGi2Cgth8AWNBgzYZLKmwMJhYLL4Io9hFDP7hyJ2My+/nlLHTzj3P/d5znntvxYhRGXG/sQGWsI1nfGIGD7hI+U/jRR0c4QmneE/KSRxgFruDY+eAFSwjIEVxgkc0+8UccIcaXkoAE7hJmm/JIKCKM2wMuZku1vCWA6bQwvoQQAer+MgBkfdS8TWDzGMTDVyVjRB7trCIvQwQa3VMo43bMhPDk2MsYD85HtoAXOMch79dY78WRsaJc9hJD+oS8R4iAn5f5MG/v8bY/sKfO/kCL2skEWR80iIAAAAASUVORK5CYII=';
+    const DEL_ICON =
+        'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABIUlEQVRYR+3VPUvEQBSF4WdLsRdBQQsrURErC/31CtoJfiDICooigr22cnEDYdGdO5tgmqQJITNz3jn3zpmJgZ/JwPpGgNGB0YGsAzt4w2fy2K5iHY+l8RmAXdzhFad4Kiy6jTNsYh+3i8ZnAFZwjXChBNEWn+IAX10BYn7YeYmtBRBt8Wcc472PEjRrhKXnf0DMi5/MQEv61VH8G0SINDWPnafFY2KmB+Z30YYIwXiiNNXiywLEvIC4mL3jeynxrgBNP/w7wKAlyDRh6vg1jVXThNljGAEUiVnMgJoeqA2iNETGgdoojtMRwA847COK93CTuAeassadEcEUEHGR3fdxFxzhBR/FbP0ZsIYNXJXGZ0pQWqPT/xFgdGB0YHAHvgG1jEwhcd+TtgAAAABJRU5ErkJggg==';
+    const SCALE_ICON =
+        'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABJElEQVRYR+3UPS8EURTG8d82GolE0NArlT6ARqEiChrRKXTUWqUtJSpCQoNKlEqlL6CloJB4aVRyky2QnZk7szOzzb3NFPPkPP/z3HNux5BPZ8j+EkBKICVQJYExnCF8s84D9vFatOZVAXYKCq9iGvN4zNNWAShqaglXeMItttsEWMY5NrGASawMCjCOb3wVtB7ML7CGaxzVBXCKF+zmAPw3D9LaAEI3AWArA6CfeWsAWeatAOSZNw4QBu0Y672B63c7jc1AMD/prddNzmB2MYGNQdfw9xDGmgfPUYzgrS6Au8jOi17KP/9jnuJDLGImIvZS5kEcAzCLezzjssDhAO9lKGIAQr0p7GEup/hnbys+mgAoU7OUNjaBUkXLiBNASiAl8AO7pD8h3UM4owAAAABJRU5ErkJggg==';
+
+    class Stage {
+
+        constructor(props) {
+
+            this.canvas = props.canvas;
+            this.ctx = this.canvas.getContext('2d');
+            this.spriteList = [];
+
+            const pos = this.canvas.getBoundingClientRect();
+            this.canvasOffsetLeft = pos.left;
+            this.canvasOffsetTop = pos.top;
+
+            this.dragSpriteTarget = null;
+            this.scaleSpriteTarget = null;
+            this.rotateSpriteTarget = null;
+
+            this.dragStartX = undefined;
+            this.dragStartY = undefined;
+            this.scaleStartX = undefined;
+            this.scaleStartY = undefined;
+            this.rotateStartX = undefined;
+            this.rotateStartY = undefined;
+
+            this.initEvent();
+
+        }
+
+        append(sprite) {
+            this.spriteList.push(sprite);
+            this.drawSprite();
+        }
+
+        initEvent() {
+            this.canvas.addEventListener('touchstart', e => {
+                this.handleTouchStart(e);
+            });
+            this.canvas.addEventListener('touchend', () => {
+                this.handleTouchEnd();
+            });
+            this.canvas.addEventListener('touchmove', e => {
+                this.handleTouchMove(e);
+                e.preventDefault();
+            }, { passive: false });
+        }
+
+
+        handleTouchStart(e) {
+            const touchEvent = this.normalizeTouchEvent(e);
+
+            if (!touchEvent) {
+                return;
+            }
+            let target = null
+
+            // 触摸在sprite上，可以拖动
+            if (target = this.getTouchSpriteTarget(touchEvent)) {
+                this.initDragEvent(target, touchEvent);
+                return;
+            }
+
+            // 缩放
+            if (target = this.getTouchTargetOfSprite(touchEvent, 'scaleIcon')) {
+                this.initScaleEvent(target, touchEvent);
+                return;
+            }
+
+            // 旋转
+            if (target = this.getTouchTargetOfSprite(touchEvent, 'rotateIcon')) {
+                this.initRotateEvent(target, touchEvent);
+                return;
+            }
+
+            // 删除
+            if (target = this.getTouchTargetOfSprite(touchEvent, 'delIcon')) {
+                this.remove(target);
+                return;
+            }
+
+        }
+
+        handleTouchMove(e) {
+
+            const touchEvent = this.normalizeTouchEvent(e);
+            if (!touchEvent) {
+                return;
+            }
+            const { touchX, touchY } = touchEvent;
+
+            // 拖拽
+            if (this.dragSpriteTarget) {
+                this.reCalSpritePos(this.dragSpriteTarget, touchX, touchY);
+                this.drawSprite();
+                return;
+            }
+
+            // 缩放
+            if (this.scaleSpriteTarget) {
+                this.reCalSpriteSize(this.scaleSpriteTarget, touchX, touchY);
+                this.drawSprite();
+                return;
+            }
+
+            // 旋转
+            if (this.rotateSpriteTarget) {
+                this.reCalSpriteRotate(this.rotateSpriteTarget, touchX, touchY);
+                this.drawSprite();
+                return;
+            }
+
+        }
+
+        handleTouchEnd() {
+            if(this.rotateSpriteTarget) {
+                this.rotateSpriteTarget.updateCoordinateByRotate();
+            }
+            if(this.scaleSpriteTarget) {
+                this.scaleSpriteTarget.updateCoordinateByScale();
+            }
+            this.scaleSpriteTarget = null;
+            this.dragSpriteTarget = null;
+            this.rotateSpriteTarget = null;
+        }
+
+        // 初始化sprite的拖拽事件
+        initDragEvent(sprite, { touchX, touchY }) {
+            this.dragSpriteTarget = sprite;
+            this.dragStartX = touchX;
+            this.dragStartY = touchY;
+        }
+
+        // 初始化sprite的缩放事件
+        initScaleEvent(sprite, { touchX, touchY }) {
+            this.scaleSpriteTarget = sprite;
+            this.scaleStartX = touchX;
+            this.scaleStartY = touchY;
+        }
+
+        // 初始化sprite的旋转事件
+        initRotateEvent(sprite, { touchX, touchY }) {
+            this.rotateSpriteTarget = sprite;
+            this.rotateStartX = touchX;
+            this.rotateStartY = touchY;
+        }
+
+        // 通过触摸的坐标重新计算sprite的坐标
+        reCalSpritePos(sprite, touchX, touchY) {
+            const [oX, oY] = sprite.pos;
+            const dirX = touchX - this.dragStartX;
+            const dirY = touchY - this.dragStartY;
+            sprite.resetPos(dirX, dirY);
+            this.dragStartX = touchX;
+            this.dragStartY = touchY;
+        }
+
+        // 通过触摸的【横】坐标重新计算sprite的大小
+        reCalSpriteSize(sprite, touchX, touchY) {
+            // 使用X轴方向作为缩放比例的判断标准
+            const [centerX, centerY] = sprite.center;
+            const startVector = [this.scaleStartX - centerX, this.scaleStartY - centerY];
+            const endVector = [touchX - centerX, touchY - centerY];
+            const dirVector = [touchX - this.scaleStartX, touchY - this.scaleStartY];
+            const startVectorLength = Math.sqrt(Math.pow(startVector[0], 2) + Math.pow(startVector[1],2));
+            const endVectorLength = Math.sqrt(Math.pow(endVector[0], 2) + Math.pow(endVector[1],2));
+            const dirX = Math.abs(dirVector[0]);
+            const dirY = Math.abs(dirVector[1]);
+            let dir = dirX > dirY ? dirX : dirY;
+            if(endVectorLength < startVectorLength) {
+                dir = -dir;
+            }
+            sprite.resetSize(dir);
+            this.scaleStartX = touchX;
+            this.scaleStartY = touchY;
+        }
+
+        // 重新计算sprite的角度
+        reCalSpriteRotate(sprite, touchX, touchY) {
+            const [centerX, centerY] = sprite.center;
+            const x1 = this.rotateStartX - centerX;
+            const y1 = this.rotateStartY - centerY;
+            const x2 = touchX - centerX;
+            const y2 = touchY - centerY;
+
+            // 因为sin函数
+            const numerator =  x1 * y2 - y1 * x2;
+            const denominator = Math.sqrt(Math.pow(x1, 2) + Math.pow(y1, 2)) * Math.sqrt(Math.pow(x2, 2) + Math.pow(
+                y2, 2));
+            const sin = numerator / denominator;
+            const angleDir = Math.asin(sin);
+
+            sprite.setRotateAngle(angleDir);
+            this.rotateStartX = touchX;
+            this.rotateStartY = touchY;
+        }
+
+        // 返回当前touch的sprite
+        getTouchSpriteTarget({ touchX, touchY }) {
+            return this.spriteList.reduce((sum, sprite) => { // 这里一直循环到最后，保证每一次移动的都是最后插入的sprite 
+                if (this.checkIfTouchIn({ touchX, touchY }, sprite)) {
+                    sum = sprite;
+                }
+                return sum;
+            }, null);
+        }
+
+        // 判断是否touch在了sprite中的某一部分上，返回这个sprite
+        getTouchTargetOfSprite({ touchX, touchY }, part) {
+            return this.spriteList.reduce((sum, sprite) => {
+                if (this.checkIfTouchIn({ touchX, touchY }, sprite[part])) {
+                    sum = sprite;
+                }
+                return sum;
+            }, null);
+        }
+
+        // 返回点击坐标
+        normalizeTouchEvent(e) {
+            const touches = [].slice.call(e.touches);
+            if (touches.length > 1) { // 多点触摸，不做处理
+                return;
+            }
+            const target = touches[0];
+            const touchX = target.pageX - this.canvasOffsetLeft;
+            const touchY = target.pageY - this.canvasOffsetTop;
+            return {
+                touchX,
+                touchY
+            }
+        }
+
+
+        // 判断是否在在某个sprite中移动。当前默认所有的sprite都是长方形的。
+        checkIfTouchIn({ touchX, touchY }, sprite) {
+            if (!sprite) {
+                return false;
+            }
+            const [[x1, y1], [x2, y2], [x3, y3], [x4, y4]] = sprite.coordinate;
+            const v1 = [x1 - touchX, y1 - touchY];
+            const v2 = [x2 - touchX, y2 - touchY];
+            const v3 = [x3 - touchX, y3 - touchY];
+            const v4 = [x4 - touchX, y4 - touchY];
+            if(
+                (v1[0] * v2[1] - v2[0] * v1[1]) > 0 
+                && (v2[0] * v4[1] -  v4[0] * v2[1]) > 0
+                && (v4[0] * v3[1] - v3[0] * v4[1]) > 0
+                && (v3[0] * v1[1] -  v1[0] * v3[1]) > 0
+            ){
+                return true;
+            }
+            return false;
+
+        }
+
+        // 从场景中删除
+        remove(sprite) {
+            this.spriteList = this.spriteList.filter(item => {
+                return item.id !== sprite.id;
+            });
+            this.drawSprite();
+        }
+
+        drawSprite() {
+            this.clearStage();
+            this.spriteList.forEach(item => {
+                item.draw(this.ctx);
+            });
+        }
+
+        clearStage() {
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        }
+    }
+
+
+    class Sprite {
+
+        constructor(props) {
+
+            this.id = Date.now() + Math.floor(Math.random() * 10);
+            this.pos = props.pos;
+            this.size = props.size;
+            this.baseSize = props.size;
+            this.minSize = props.minSize;
+            this.maxSize = props.maxSize;
+            this.center = [props.pos[0] + props.size[0] / 2, props.pos[1] + props.size[1] / 2];
+            this.delIcon = {};
+            this.scaleIcon = {};
+            this.rotateIcon = {};
+
+            this.coordinate = this.setCoordinate(this.pos, this.size);
+            
+            this.rotateAngle = 0; // 一共旋转的角度
+            this.rotateAngleDir = 0; // 每次旋转角度差值
+
+            this.scalePercent = 1; // 一共缩放的比例
+            this.parent = this;
+
+            this.init();
+        }
+
+        setCoordinate(pos, size) {
+            return [
+                [pos[0], pos[1]],
+                [pos[0] + size[0], pos[1]],
+                [pos[0], pos[1] + size[1]],
+                [pos[0] + size[0], pos[1] + size[1]]
+            ];
+        }
+
+        updateCoordinateByRotate() {
+            const angle = this.rotateAngleDir;
+            this.updateItemCoordinateByRotate(this, this.center, angle);
+            this.updateItemCoordinateByRotate(this.delIcon, this.center, angle);
+            this.updateItemCoordinateByRotate(this.scaleIcon, this.center, angle);
+            this.updateItemCoordinateByRotate(this.rotateIcon, this.center, angle);
+            this.rotateAngleDir = 0;
+        }
+
+        updateItemCoordinateByScale(sprite, center, scale) {
+            const [centerX, centerY] = center;
+            const coordinateVector = sprite.coordinate.map( point => {
+                return [point[0]- centerX, point[1] - centerY];
+            });
+            const newCoordinateVector = coordinateVector.map( vector => {
+                const [x, y] = vector;
+                const newX = x * scale;
+                const newY = y * scale;
+                return [newX, newY];
+            });
+            sprite.coordinate = newCoordinateVector.map( vector => {
+                return [vector[0] + centerX , vector[1] + centerY];
+            });
+        }
+
+        getIconCenter(iconCoordinate) {
+            const point1 = iconCoordinate[0];
+            const point4 = iconCoordinate[3];
+            const x = (point1[0] + point4[0]) / 2;
+            const y = (point1[1] + point4[1]) / 2;
+            return [x, y];
+        }
+
+        getIconCoordinateByIconCenter(center) {
+            const [x, y] = center;
+            return [
+                [x - ICON_HEIGHT / 2, y - ICON_HEIGHT / 2],
+                [x + ICON_HEIGHT / 2, y - ICON_HEIGHT / 2],
+                [x - ICON_HEIGHT / 2, y + ICON_HEIGHT / 2],
+                [x + ICON_HEIGHT / 2, y + ICON_HEIGHT / 2]
+            ];
+        }
+
+        updateCoordinateByScale() {
+            const scale = this.size[0] / this.baseSize[0];
+           
+            // 左上角旋转按钮
+            const [rotateCenterX, rotateCenterY] = this.getIconCenter(this.rotateIcon.coordinate);
+            const rotateVector = [rotateCenterX - this.center[0], rotateCenterY - this.center[1]];
+            const rotateVectorNew = [rotateVector[0] * scale, rotateVector[1] * scale];
+            const rotateIconCenter = [rotateVectorNew[0] + this.center[0], rotateVectorNew[1] + this.center[1]];
+            this.rotateIcon.coordinate = this.getIconCoordinateByIconCenter(rotateIconCenter);
+           
+           
+
+            // 右上角缩放按钮
+            const [scaleCenterX, scaleCenterY] = this.getIconCenter(this.scaleIcon.coordinate);
+            const scaleVector = [scaleCenterX - this.center[0], scaleCenterY - this.center[1]];
+            const scaleVectorNew = [scaleVector[0] * scale, scaleVector[1] * scale];
+            const scaleIconCenter = [scaleVectorNew[0] + this.center[0], scaleVectorNew[1] + this.center[1]];
+            this.scaleIcon.coordinate = this.getIconCoordinateByIconCenter(scaleIconCenter);
+
+
+            // 左下角删除按钮
+            const [delCenterX, delCenterY] = this.getIconCenter(this.delIcon.coordinate);
+            const delVector = [delCenterX - this.center[0], delCenterY- this.center[1]];
+            const delVectorNew = [delVector[0] * scale, delVector[1] * scale];
+            const delIconCenter = [delVectorNew[0] + this.center[0], delVectorNew[1] + this.center[1]];
+            this.delIcon.coordinate = this.getIconCoordinateByIconCenter(delIconCenter);
+
+            this.updateItemCoordinateByScale(this, this.center, scale);
+
+            this.baseSize = this.size.slice(0);
+            
+            
+        }
+
+        updateItemCoordinateByRotate(target, center, angle){
+            const [centerX, centerY] = center;
+            const coordinateVector = target.coordinate.map( point => {
+                return [point[0]- centerX, point[1] - centerY];
+            });
+            const newCoordinateVector = coordinateVector.map( vector => {
+                const [x, y] = vector;
+                // x2 = x1 * cos - y1 * sin;
+                // y2 = x1 * sin + y1 * cos;
+                const newX = x * Math.cos(angle) - y * Math.sin(angle);
+                const newY = x * Math.sin(angle) + y * Math.cos(angle);
+                return [newX, newY];
+            });
+            target.coordinate = newCoordinateVector.map( vector => {
+                return [vector[0] + centerX , vector[1] + centerY];
+            });
+        }
+
+        draw(ctx) {
+
+            const sprite = this;
+            ctx.save();
+            const [x, y] = sprite.pos;
+            const [width, height] = sprite.size;
+            ctx.beginPath();
+
+            if (this.rotateAngle !== 0) {
+                const centerX = x + width / 2;
+                const centerY = y + height / 2;
+                ctx.translate(centerX, centerY);
+                ctx.rotate(this.rotateAngle);
+                ctx.translate(-centerX, -centerY);
+            }
+
+            ctx.rect(x, y, width, height);
+            ctx.fillStyle = '#f00';
+            ctx.fill();
+            ctx.restore();
+            this.drawIcon(ctx, sprite.delIcon);
+            this.drawIcon(ctx, sprite.rotateIcon);
+            this.drawIcon(ctx, sprite.scaleIcon);
+
+        }
+
+        drawIcon(ctx, icon) {
+            ctx.beginPath();
+            ctx.save();
+            const [x, y] = icon.pos;
+            const [width, height] = icon.size;
+            
+            if (this.rotateAngle !== 0) {
+                const [spriteX, spriteY] = this.pos;
+                const [spriteW, spriteH] = this.size;
+                const centerX = spriteX + spriteW / 2;
+                const centerY = spriteY + spriteH / 2;
+                ctx.translate(centerX, centerY);
+                ctx.rotate(this.rotateAngle);
+                ctx.translate(-centerX, -centerY);
+            }
+
+            if (icon.self) {
+                ctx.drawImage(icon.self, x, y, width, height);
+            } else {
+                const img = new Image();
+                img.crossOrigin = "anonymous";
+                img.src = icon.url;
+                img.onload = function () {
+                    icon.self = img;
+                    ctx.drawImage(img, x, y, width, height);
+                }
+            }
+            ctx.restore();
+        }
+
+        init() {
+            this.initDelIcon();
+            this.initRotateIcon();
+            this.initScaleIcon();
+        }
+
+        // 删除按钮，左下角
+        initDelIcon() {
+            const [width, height] = this.size;
+            const [x, y] = this.pos;
+            this.delIcon = { 
+                ...this.delIcon,
+                pos: [x - BOX_PADDING - ICON_HEIGHT * 0.5, y + height + BOX_PADDING - ICON_HEIGHT * 0.5],
+                size: [ICON_HEIGHT, ICON_HEIGHT],
+                url: DEL_ICON,
+                parent: this
+            };
+            this.delIcon.coordinate = this.setCoordinate(this.delIcon.pos, this.delIcon.size);
+        }
+
+        // 缩放按钮，右上角
+        initScaleIcon() {
+            const [width, height] = this.size;
+            const [x, y] = this.pos;
+            this.scaleIcon = { 
+                ...this.scaleIcon,
+                pos: [x + width + BOX_PADDING - ICON_HEIGHT * 0.5, y - BOX_PADDING - ICON_HEIGHT * 0.5],
+                size: [ICON_HEIGHT, ICON_HEIGHT],
+                url: SCALE_ICON,
+                parent: this
+            };
+            
+            this.scaleIcon.coordinate = this.setCoordinate(this.scaleIcon.pos, this.scaleIcon.size);
+        }
+
+        // 旋转按钮，左上角
+        initRotateIcon() {
+            const [width, height] = this.size;
+            const [x, y] = this.pos;
+            this.rotateIcon = { 
+                ...this.rotateIcon,
+                pos: [x - BOX_PADDING - ICON_HEIGHT * 0.5, y - BOX_PADDING - ICON_HEIGHT * 0.5],
+                size: [ICON_HEIGHT, ICON_HEIGHT],
+                url: ROTATE_ICON,
+                parent: this
+            };
+            this.rotateIcon.coordinate = this.setCoordinate(this.rotateIcon.pos, this.rotateIcon.size);
+        }
+
+        // 重置icon的位置与大小
+        resetIconPos() {
+            const [width, height] = this.size;
+            const [x, y] = this.pos;
+            this.rotateIcon = { 
+                ...this.rotateIcon,
+                pos: [x - BOX_PADDING - ICON_HEIGHT * 0.5, y - BOX_PADDING - ICON_HEIGHT * 0.5],
+                size: [ICON_HEIGHT, ICON_HEIGHT]
+            };
+            this.scaleIcon = {
+                ...this.scaleIcon,
+                pos: [x + width + BOX_PADDING - ICON_HEIGHT * 0.5, y - BOX_PADDING - ICON_HEIGHT * 0.5],
+                size: [ICON_HEIGHT, ICON_HEIGHT]
+            };
+            this.delIcon = {
+                ...this.delIcon,
+                pos: [x - BOX_PADDING - ICON_HEIGHT * 0.5, y + height + BOX_PADDING - ICON_HEIGHT * 0.5],
+                size: [ICON_HEIGHT, ICON_HEIGHT]
+            };
+        }
+
+        resetPos(dirX, dirY) {
+            const [oX, oY] = this.pos;
+            this.pos = [oX + dirX, oY + dirY];
+            this.center = [this.center[0] + dirX, this.center[1] + dirY];
+
+            // 更新四个顶点的坐标
+            this.coordinate = this.coordinate.map(point => {
+                return [point[0] + dirX, point[1] + dirY];
+            });
+
+            if (this.delIcon) {
+                const [x, y] = this.delIcon.pos;
+                this.delIcon.pos = [x + dirX, y + dirY];
+                this.delIcon.coordinate = this.delIcon.coordinate.map(point => {
+                    return [point[0] + dirX, point[1] + dirY];
+                });
+            }
+            if (this.scaleIcon) {
+                const [x, y] = this.scaleIcon.pos;
+                this.scaleIcon.pos = [x + dirX, y + dirY];
+                this.scaleIcon.coordinate = this.scaleIcon.coordinate.map(point => {
+                    return [point[0] + dirX, point[1] + dirY];
+                });
+            }
+            if (this.rotateIcon) {
+                const [x, y] = this.rotateIcon.pos;
+                this.rotateIcon.pos = [x + dirX, y + dirY];
+                this.rotateIcon.coordinate = this.rotateIcon.coordinate.map(point => {
+                    return [point[0] + dirX, point[1] + dirY];
+                });
+            }
+        }
+
+        resetSize(dir) {
+            const sprite = this;
+            const [oWidth, oHeight] = sprite.size;
+            this.scalePercent = (oWidth + dir) / oWidth; // 使用x轴的长度来确定缩放的比例
+            const [minWidth, minHeight] = sprite.minSize;
+            const [maxWidth, maxHeight] = sprite.maxSize;
+            const [centerX, centerY] = sprite.center;
+
+            let width = oWidth * this.scalePercent;
+            let height = oHeight * this.scalePercent;
+            width < minWidth && (width = minWidth);
+            height < minHeight && (height = minHeight);
+            width > maxWidth && (width = maxWidth);
+            height > maxHeight && (height = maxHeight);
+
+            const x = centerX - width / 2;
+            const y = centerY - height / 2;
+            sprite.pos = [x, y];
+            sprite.size = [width, height];
+
+            sprite.resetIconPos();
+        }
+
+        setRotateAngle(angleDir) {
+            this.rotateAngle += angleDir;
+            this.rotateAngleDir += angleDir;
+        }
+
+    }
+
+    window.onload = function () {
+
+        const stage = new Stage({
+            canvas: document.querySelector('canvas')
+        });
+
+        document.querySelector('.red-box').addEventListener('click', function () {
+            const randomX = Math.floor(Math.random() * 200);
+            const randomY = Math.floor(Math.random() * 200);
+            const sprite = new Sprite({
+                pos: [randomX, randomY],
+                size: [120, 60],
+                minSize: [40, 20],
+                maxSize: [240, 120]
+            });
+            stage.append(sprite);
+        });
+
+    }
+</script>
+
+</html>
