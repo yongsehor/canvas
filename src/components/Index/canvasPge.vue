@@ -6,13 +6,8 @@
 <script>
 export default {
   name: "canvasPage",
-  components: {
-
-  },
   data() {
-    
     return {
-      wheelDirection:true,
       canvas: null,
       ctx: null,
       startAngle:0,
@@ -20,7 +15,6 @@ export default {
         IDLE: 0,
         DRAG_START: 1,//开始拖动
         DRAGGING: 2,//正在拖动
-        WHEELIDLE: 3,
         WHEEL_START: 4,//开始旋转
         WHEELING: 5//正在旋转
       },
@@ -34,8 +28,8 @@ export default {
         offsetEvtPos: { x: null, y: null }//偏移量：拖动时防止回到圆心
       },
       circles:[],//存储画布上的圆圈
-      dotCirles: [],//存储画布上的圆点
-      lineCirles: [],//存储画布上的不规则圆
+      dotCircles: [],//存储画布上的圆点
+      lineCircles: [],//存储画布上的不规则圆
       diameters: [],//存储画布上的直径
       canvasWidth:0,
       canvasHeight:0,
@@ -248,9 +242,9 @@ export default {
     drawAll() {
       this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
       this.circles.forEach(a => this.drawCircle(a.x, a.y, a.r));
-      this.dotCirles.forEach(a => this.drawDot(a.x, a.y, a.r));
+      this.dotCircles.forEach(a => this.drawDot(a.x, a.y, a.r));
       this.diameters.forEach(a => this.drawDiameter(a));
-      this.lineCirles.forEach(a => this.drawLineCircle(a));
+      this.lineCircles.forEach(a => this.drawLineCircle(a));
     },
     draw() {
       this.canvasInfo.status = this.statusConfig.IDLE
@@ -260,11 +254,11 @@ export default {
       });
       this.dArr.forEach( a => {
         this.drawDot(a.x, a.y, a.r)
-        this.dotCirles.push(a)
+        this.dotCircles.push(a)
       });
       this.lArr.forEach( a => {
         this.drawLineCircle(a)
-        this.lineCirles.push(a)
+        this.lineCircles.push(a)
       });
       this.rArr.forEach( a => {
         this.drawDiameter(a)
@@ -325,20 +319,20 @@ export default {
       this.ctx.fill();
     },
     //拖动对象坐标变动
-    dragChangePostion(xmove, ymove) {
+    dragChangePosition(xMove, yMove) {
       const { wheelTarget, dragTarget, lineTarget, diameterTarget } = this.canvasInfo
       lineTarget.forEach(e=>{
-        e.x += xmove
-        e.y += ymove
+        e.x += xMove
+        e.y += yMove
       })
       diameterTarget.forEach(e=>{
-        e.x += xmove
-        e.y += ymove
+        e.x += xMove
+        e.y += yMove
       })
-      dragTarget.x += xmove
-      dragTarget.y += ymove
-      wheelTarget.x += xmove
-      wheelTarget.y += ymove
+      dragTarget.x += xMove
+      dragTarget.y += yMove
+      wheelTarget.x += xMove
+      wheelTarget.y += yMove
     },
     //判断是否在圆内
     ifInCircle(pos){
@@ -352,16 +346,16 @@ export default {
     },
     //判断是否在小圆点内
     ifInDotCircle(pos){
-      for (let index = 0; index < this.dotCirles.length; index++) {
-        console.log(this.getDistance(this.dotCirles[index], pos), 'distanceD');
-        if (this.getDistance(this.dotCirles[index], pos) < this.dotCirles[index].r) {
-          return this.dotCirles[index]
+      for (let index = 0; index < this.dotCircles.length; index++) {
+        console.log(this.getDistance(this.dotCircles[index], pos), 'distanceD');
+        if (this.getDistance(this.dotCircles[index], pos) < this.dotCircles[index].r) {
+          return this.dotCircles[index]
         }
       }
       return false
     },
     // 获取触摸时的坐标
-    getCanvasPostion(e){
+    getCanvasPosition(e){
       return {
         x: e.changedTouches[0].clientX - this.canvasWidth,
         y: e.changedTouches[0].clientY - this.canvasHeight
@@ -373,43 +367,42 @@ export default {
     },
     // 触摸按下
     touchStartEvent(e) {
-      const dotRef = this.ifInDotCircle(this.getCanvasPostion(e))
+      const dotRef = this.ifInDotCircle(this.getCanvasPosition(e))
       if (dotRef) {
         this.getFriendByTarget(dotRef, 2)
         this.canvasInfo.wheelTarget = dotRef
         this.canvasInfo.status = this.statusConfig.WHEEL_START
-        this.canvasInfo.lastEvtPos = this.getCanvasPostion(e)
-        this.canvasInfo.offsetEvtPos = this.getCanvasPostion(e)
+        this.canvasInfo.lastEvtPos = this.getCanvasPosition(e)
+        this.canvasInfo.offsetEvtPos = this.getCanvasPosition(e)
         return
       }
-      const circleRef = this.ifInCircle(this.getCanvasPostion(e))
+      const circleRef = this.ifInCircle(this.getCanvasPosition(e))
       if (circleRef) {
         this.canvasInfo.dragTarget = circleRef
         this.getFriendByTarget(circleRef)
         this.canvasInfo.status = this.statusConfig.DRAG_START
-        this.canvasInfo.lastEvtPos = this.getCanvasPostion(e)
-        this.canvasInfo.offsetEvtPos = this.getCanvasPostion(e)
+        this.canvasInfo.lastEvtPos = this.getCanvasPosition(e)
+        this.canvasInfo.offsetEvtPos = this.getCanvasPosition(e)
       }
-      
     },
      // 移动
     touchMoveEvent(e) {
-      if (this.canvasInfo.status === this.statusConfig.DRAG_START && this.getDistance(this.getCanvasPostion(e), this.canvasInfo.lastEvtPos) > 10) {// 开始拖动圆圈
+      if (this.canvasInfo.status === this.statusConfig.DRAG_START && this.getDistance(this.getCanvasPosition(e), this.canvasInfo.lastEvtPos) > 10) {// 开始拖动圆圈
         this.canvasInfo.status = this.statusConfig.DRAGGING
-        this.canvasInfo.offsetEvtPos = this.getCanvasPostion(e)
+        this.canvasInfo.offsetEvtPos = this.getCanvasPosition(e)
       } else if (this.canvasInfo.status === this.statusConfig.DRAGGING) {//正在拖动圆圈
-        const xmove = this.getCanvasPostion(e).x - this.canvasInfo.offsetEvtPos.x
-        const ymove = this.getCanvasPostion(e).y - this.canvasInfo.offsetEvtPos.y
+        const xMove = this.getCanvasPosition(e).x - this.canvasInfo.offsetEvtPos.x
+        const yMove = this.getCanvasPosition(e).y - this.canvasInfo.offsetEvtPos.y
         // 拖动改变坐标点
-        this.dragChangePostion(xmove,ymove)
+        this.dragChangePosition(xMove,yMove)
         this.drawAll()
-        this.canvasInfo.offsetEvtPos = this.getCanvasPostion(e)
-      } else if (this.canvasInfo.status === this.statusConfig.WHEEL_START && this.getDistance(this.getCanvasPostion(e), this.canvasInfo.lastEvtPos) > 5) {//开始旋转
+        this.canvasInfo.offsetEvtPos = this.getCanvasPosition(e)
+      } else if (this.canvasInfo.status === this.statusConfig.WHEEL_START && this.getDistance(this.getCanvasPosition(e), this.canvasInfo.lastEvtPos) > 5) {//开始旋转
         this.canvasInfo.status = this.statusConfig.WHEELING
-        this.canvasInfo.offsetEvtPos = this.getCanvasPostion(e)
+        this.canvasInfo.offsetEvtPos = this.getCanvasPosition(e)
       } else if (this.canvasInfo.status === this.statusConfig.WHEELING) {//正在旋转
         const { wheelTarget, dragTarget, lineTarget, diameterTarget } = this.canvasInfo
-        const canvasPosition = this.getCanvasPostion(e)
+        const canvasPosition = this.getCanvasPosition(e)
         const angle = this.getAngle(dragTarget, wheelTarget, canvasPosition)
         if (angle) {
           let obj1 = this.rotatePoint(dragTarget.x, dragTarget.y, wheelTarget.x, wheelTarget.y, angle*Math.PI/180)
@@ -426,12 +419,12 @@ export default {
             ele.y = obj.y
           })
           this.drawAll()
-          this.canvasInfo.offsetEvtPos = this.getCanvasPostion(e)
+          this.canvasInfo.offsetEvtPos = this.getCanvasPosition(e)
         }
       }
     },
     // 触摸抬起
-    touchEndEvent(e){
+    touchEndEvent(){
       if (this.canvasInfo.status === this.statusConfig.DRAGGING || this.canvasInfo.status === this.statusConfig.WHEELING) {
         this.canvasInfo.status = this.statusConfig.IDLE
       }
@@ -443,12 +436,12 @@ export default {
      */
     getFriendByTarget(friendTarget, type = 1) {
       if (type == 1) {
-        this.canvasInfo.wheelTarget = this.dotCirles.filter(ele => friendTarget.r == ele.cr)[0]
-        this.canvasInfo.lineTarget = this.lineCirles.filter(ele => friendTarget.r == ele[0].cr)[0]
+        this.canvasInfo.wheelTarget = this.dotCircles.filter(ele => friendTarget.r == ele.cr)[0]
+        this.canvasInfo.lineTarget = this.lineCircles.filter(ele => friendTarget.r == ele[0].cr)[0]
         this.canvasInfo.diameterTarget = this.diameters.filter(ele => friendTarget.r == ele[0].cr)[0]
       } else {
         this.canvasInfo.dragTarget = this.circles.filter(ele => friendTarget.cr == ele.r)[0]
-        this.canvasInfo.lineTarget = this.lineCirles.filter(ele => friendTarget.cr == ele[0].cr)[0]
+        this.canvasInfo.lineTarget = this.lineCircles.filter(ele => friendTarget.cr == ele[0].cr)[0]
         this.canvasInfo.diameterTarget = this.diameters.filter(ele => friendTarget.cr == ele[0].cr)[0]
       }
     },
