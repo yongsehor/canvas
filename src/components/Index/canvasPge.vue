@@ -337,8 +337,7 @@ export default {
     //判断是否在圆内
     ifInCircle(pos){
       for (let index = 0; index < this.circles.length; index++) {
-        console.log(this.getDistance(this.circles[index], pos),'distanceC');
-        if (this.getDistance(this.circles[index], pos) < (this.circles[index].r - 5)) {
+        if (this.getDistance(this.circles[index], pos) < (this.circles[index].r)) {
           return this.circles[index]
         }
       }
@@ -347,7 +346,6 @@ export default {
     //判断是否在小圆点内
     ifInDotCircle(pos){
       for (let index = 0; index < this.dotCircles.length; index++) {
-        console.log(this.getDistance(this.dotCircles[index], pos), 'distanceD');
         if (this.getDistance(this.dotCircles[index], pos) < this.dotCircles[index].r) {
           return this.dotCircles[index]
         }
@@ -368,16 +366,16 @@ export default {
     // 触摸按下
     touchStartEvent(e) {
       const dotRef = this.ifInDotCircle(this.getCanvasPosition(e))
+      const circleRef = this.ifInCircle(this.getCanvasPosition(e))
       if (dotRef) {
+        console.log('dot');
         this.getFriendByTarget(dotRef, 2)
         this.canvasInfo.wheelTarget = dotRef
         this.canvasInfo.status = this.statusConfig.WHEEL_START
         this.canvasInfo.lastEvtPos = this.getCanvasPosition(e)
         this.canvasInfo.offsetEvtPos = this.getCanvasPosition(e)
-        return
-      }
-      const circleRef = this.ifInCircle(this.getCanvasPosition(e))
-      if (circleRef) {
+      }else if(circleRef){
+        console.log('circle');
         this.canvasInfo.dragTarget = circleRef
         this.getFriendByTarget(circleRef)
         this.canvasInfo.status = this.statusConfig.DRAG_START
@@ -405,29 +403,30 @@ export default {
         const canvasPosition = this.getCanvasPosition(e)
         const angle = this.getAngle(dragTarget, wheelTarget, canvasPosition)
         if (angle) {
-          let obj1 = this.rotatePoint(dragTarget.x, dragTarget.y, wheelTarget.x, wheelTarget.y, angle*Math.PI/180)
+          console.log(angle*180/Math.PI,'角度');
+          let obj1 = this.rotatePoint(dragTarget.x, dragTarget.y, wheelTarget.x, wheelTarget.y, angle)
           wheelTarget.x = obj1.x
           wheelTarget.y = obj1.y
           lineTarget.forEach(ele => {
-            let obj = this.rotatePoint(dragTarget.x, dragTarget.y, ele.x, ele.y, angle * Math.PI / 180)
+            let obj = this.rotatePoint(dragTarget.x, dragTarget.y, ele.x, ele.y, angle)
             ele.x = obj.x
             ele.y = obj.y
           })
           diameterTarget.forEach(ele => {
-            let obj = this.rotatePoint(dragTarget.x, dragTarget.y, ele.x, ele.y, angle * Math.PI / 180)
+            let obj = this.rotatePoint(dragTarget.x, dragTarget.y, ele.x, ele.y, angle)
             ele.x = obj.x
             ele.y = obj.y
           })
           this.drawAll()
-          this.canvasInfo.offsetEvtPos = this.getCanvasPosition(e)
         }
+        this.canvasInfo.offsetEvtPos = this.getCanvasPosition(e)
       }
     },
     // 触摸抬起
     touchEndEvent(){
-      if (this.canvasInfo.status === this.statusConfig.DRAGGING || this.canvasInfo.status === this.statusConfig.WHEELING) {
+      // if (this.canvasInfo.status === this.statusConfig.DRAGGING || this.canvasInfo.status === this.statusConfig.WHEELING) {
         this.canvasInfo.status = this.statusConfig.IDLE
-      }
+      // }
     },
     /**
      * 根据控制对象找到伴生者
@@ -459,7 +458,7 @@ export default {
       var modAB = Math.sqrt(AB.x * AB.x + AB.y * AB.y);
       var modAC = Math.sqrt(AC.x * AC.x + AC.y * AC.y);
       var angle = Math.acos(dotProduct / (modAB * modAC));
-      return angle * (180 / Math.PI); 
+      return angle; 
     },
     // 计算旋转后的点的坐标
     rotatePoint(cx, cy, x, y, angle) {
