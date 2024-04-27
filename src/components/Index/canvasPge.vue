@@ -368,14 +368,12 @@ export default {
       const dotRef = this.ifInDotCircle(this.getCanvasPosition(e))
       const circleRef = this.ifInCircle(this.getCanvasPosition(e))
       if (dotRef) {
-        console.log('dot');
         this.getFriendByTarget(dotRef, 2)
         this.canvasInfo.wheelTarget = dotRef
         this.canvasInfo.status = this.statusConfig.WHEEL_START
         this.canvasInfo.lastEvtPos = this.getCanvasPosition(e)
         this.canvasInfo.offsetEvtPos = this.getCanvasPosition(e)
-      }else if(circleRef){
-        console.log('circle');
+      }else if(circleRef && !dotRef){
         this.canvasInfo.dragTarget = circleRef
         this.getFriendByTarget(circleRef)
         this.canvasInfo.status = this.statusConfig.DRAG_START
@@ -403,7 +401,6 @@ export default {
         const canvasPosition = this.getCanvasPosition(e)
         const angle = this.getAngle(dragTarget, wheelTarget, canvasPosition)
         if (angle) {
-          console.log(angle*180/Math.PI,'角度');
           let obj1 = this.rotatePoint(dragTarget.x, dragTarget.y, wheelTarget.x, wheelTarget.y, angle)
           wheelTarget.x = obj1.x
           wheelTarget.y = obj1.y
@@ -418,8 +415,8 @@ export default {
             ele.y = obj.y
           })
           this.drawAll()
+          this.canvasInfo.offsetEvtPos = this.getCanvasPosition(e)
         }
-        this.canvasInfo.offsetEvtPos = this.getCanvasPosition(e)
       }
     },
     // 触摸抬起
@@ -468,7 +465,7 @@ export default {
       let newX = null
       let newY = null
       newX = cx + (vx * Math.cos(angle) - vy * Math.sin(angle));
-      newY = cx + (vx * Math.sin(angle) + vy * Math.cos(angle));
+      newY = cy + (vx * Math.sin(angle) + vy * Math.cos(angle));
       return { x:newX, y:newY };
     }
   },
