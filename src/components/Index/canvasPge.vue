@@ -1,6 +1,7 @@
 <template>
   <div id="grid">
     <canvas id="canvas" width="300px" height="300px"></canvas>
+    <van-button type="primary" @click="addObj" style="display: block;margin:20px">添加</van-button>
   </div>
 </template>
 <script>
@@ -467,6 +468,11 @@ export default {
       newX = cx + (vx * Math.cos(angle) - vy * Math.sin(angle));
       newY = cy + (vx * Math.sin(angle) + vy * Math.cos(angle));
       return { x:newX, y:newY };
+    },
+    // 添加可控制对象绘制对
+    addObj() {
+      // 同时添加圆&不规则圆&直径&控制旋转的圆点
+      // 直径决定了圆的直径和圆点的位置
     }
   },
   beforeDestroy() {
