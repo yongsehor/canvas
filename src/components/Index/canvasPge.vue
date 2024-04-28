@@ -83,7 +83,7 @@ export default {
           },
           {
             x: 200,
-            y: 155,
+            y: 165,
             cr:30
           },
           {
@@ -226,7 +226,8 @@ export default {
             cr: 10
           }
         ]
-      ]
+      ],
+      
     };
   },
   mounted() {
@@ -473,6 +474,34 @@ export default {
     addObj() {
       // 同时添加圆&不规则圆&直径&控制旋转的圆点
       // 直径决定了圆的直径和圆点的位置
+      // 使用测试数据---这里有一个bug，直径相同时，拖动或旋转的时候就找不到对象！！！
+      // 待优化，不能靠直径判断，需要后端接口返回唯一标识
+      const addCircle = {x:100,y:220,r:20}
+      const addDot = {x:80,y:220,r:5,cr:20}
+      const addLine = [
+        {x:80,y:220,cr:20},
+        {x:81,y:210,cr:20},
+        {x:90,y:202,cr:20},
+        {x:100,y:198,cr:20},
+        {x:110,y:201,cr:20},
+        {x:118,y:210,cr:20},
+        {x:121,y:220,cr:20},
+        {x:118,y:230,cr:20},
+        {x:110,y:238,cr:20},
+        {x:100,y:241,cr:20},
+        {x:90,y:238,cr:20},
+        {x:82,y:230,cr:20},
+        {x:80,y:220,cr:20}
+      ]
+      const addDiameter = [
+        {x:80,y:220,cr:20},
+        {x:120,y:220,cr:20}
+      ]
+      this.circles.push(addCircle)
+      this.dotCircles.push(addDot)
+      this.lineCircles.push(addLine)
+      this.diameters.push(addDiameter)
+      this.drawAll()
     }
   },
   beforeDestroy() {
