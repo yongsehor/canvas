@@ -33,18 +33,32 @@ Vue.component("loading", Loading);
 
 router.beforeEach((to, from, next) => {
   const token = window.localStorage.getItem("token");
-  if (to.matched.some((r) => r.meta.isUserLogin)) {
-    if (token) {
-      next();
-    } else {
-      Toast.fail("您尚未登录 请先登录");
-      next({
-        path: "/index",
-        param: { redirect: to.fullPath },
-      });
-    }
+  // if (to.matched.some((r) => r.meta.isUserLogin)) {
+  //   if (token) {
+  //     next({
+  //       path: "/index"
+  //     });
+  //   } else {
+  //     Toast.fail("您尚未登录 请先登录");
+  //     next({
+  //       path: "/login",
+  //       param: { redirect: to.fullPath },
+  //     });
+  //   }
+  // } else {
+  //   Toast.fail("您尚未登录 请先登录");
+  //   next('/login');
+  // }
+  if (token) {
+    if(to.name === 'login')next('/login')
+    else next()
   } else {
-    next();
+    if(to.name === 'login'){
+      next()
+    }else{
+      Toast.fail("您尚未登录 请先登录");
+      next('/login')
+    }
   }
 });
 

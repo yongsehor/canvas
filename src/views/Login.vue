@@ -1,33 +1,34 @@
 <template>
   <div id="login">
     <div class="logo">
-      <p>yy</p>
-      <p>yy</p>
+      <van-image
+        :src="require('../assets/images/logo.jpg')"
+      />
     </div>
     <div class="button">
       <van-button type="default" block round @click="showLoginPopup">
-        手 机 号 码 登 录
+        登 录
       </van-button>
-      <van-button type="danger" block round to="/index">
-        免 登 录 立 即 体 验
+      <van-button type="default" block round @click="showRegisterPopup">
+        注 册
       </van-button>
     </div>
 
-    <!-- 弹出层 -->
-    <van-popup v-model="showPopup" position="top" class="popup_login" closeable>
+    <!-- 登录 -->
+    <van-popup v-model="loginPopup" position="top" class="popup_login" closeable>
       <div class="form">
         <!-- 文字描述 -->
         <div class="slogen">
           <p class="slg_title">
-            请使用网易云帐号登录<br /><span>体验更多精彩！</span>
+            帐号登录<br />
           </p>
           <p class="slg_txt">
-            这个世界因为音乐而变得悦耳！希望你能在这里找到属于你的那一片天地
+            xxxxxxxxxxxxxxxxxxx
           </p>
           <p class="slg_txt">
             <span class="slg_txt_tips">
               tips:
-              手机号和密码为注册网易云音乐平台时候的手机和密码。由于接口为网络资源，且在本项目并没有进行加密，请注意帐号安全！
+              密码为xxxxxxxxxxx!
             </span>
           </p>
         </div>
@@ -60,27 +61,95 @@
         </div>
       </div>
     </van-popup>
+    <!-- 注册 -->
+    <van-popup v-model="registerPopup" position="top" class="popup_login" closeable>
+      <div class="form">
+        <!-- 文字描述 -->
+        <div class="slogen">
+          <p class="slg_title">
+            帐号注册<br />
+          </p>
+          <p class="slg_txt">
+            xxxxxxxxxxxxxxxxxxx
+          </p>
+          <p class="slg_txt">
+            <span class="slg_txt_tips">
+              tips:
+              密码为xxxxxxxxxxx!
+            </span>
+          </p>
+        </div>
+        <!-- 表单 -->
+        <div class="text_input">
+          <van-form @submit="registerSubmit">
+            <van-field
+              v-model="phone"
+              name="phone"
+              label="手机号"
+              placeholder="手机号"
+              :rules="[
+                { required: true, pattern, message: '请填写正确的手机号' },
+              ]"
+            />
+            <van-cell title="密码"/>
+            <van-password-input
+              :value="password"
+              :mask="maskShow"
+              @click="maskShow = !maskShow"
+              :focused="showKeyboard"
+              :rules="[{ required: true, message: '请填写密码' }]"
+            /> 
+            <van-cell title="确认密码"/>
+            <van-password-input
+              :value="passwordConfirm"
+              :mask="maskShow1"
+              @click="maskShow1 = !maskShow1"
+              :focused="showKeyboard1"
+              :rules="[{ required: true, message: '请再次确认密码是否一致' }]"
+            /> 
+          </van-form>
+        </div>
+      </div>
+    </van-popup>
   </div>
 </template>
 
 <script>
-import { _login } from "../network/user.js";
+import { _login,_register } from "../network/user.js";
 export default {
   data() {
     return {
-      showPopup: false,
+      loginPopup: false,
+      registerPopup: false,
+      maskShow:true,
       phone: "",
       password: "",
+      passwordConfirm: "",
       pattern: /^(13[0-9]|14[5|7]|15[0|1|2|3|4|5|6|7|8|9]|18[0|1|2|3|5|6|7|8|9])\d{8}$/,
     };
   },
   methods: {
     showLoginPopup() {
-      this.showPopup = true;
+      this.loginPopup = true;
+    },
+    showRegisterPopup() {
+      this.registerPopup = true;
     },
     // 登录
     async login() {
       let { data: res } = await _login(this.phone, this.password);
+      if (res.code == 200) {
+        window.localStorage.setItem("token", res.token);
+        window.localStorage.setItem("userinfo", JSON.stringify(res.profile));
+        this.$msg.success("登录成功");
+        this.$router.push("/index");
+      } else {
+        this.$msg.fail(res.msg);
+      }
+    },
+    // 注册
+    async registerSubmit() {
+      let { data: res } = await _register(this.phone, this.password);
       if (res.code == 200) {
         window.localStorage.setItem("token", res.token);
         window.localStorage.setItem("userinfo", JSON.stringify(res.profile));

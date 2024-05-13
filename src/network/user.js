@@ -7,6 +7,13 @@ export function _login(phone, password) {
     params: { phone, password },
   }).catch((err) => err.response);
 }
+// 注册
+export function _register(phone, password) {
+  return request({
+    url: "/login/cellphone",
+    params: { phone, password },
+  }).catch((err) => err.response);
+}
 // 获取登录状态
 export function _getLoginStatus() {
   return request({
